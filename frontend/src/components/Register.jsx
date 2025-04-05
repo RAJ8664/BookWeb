@@ -23,8 +23,9 @@ const Register = () => {
     try {
       await createUserWithEmailAndPassword(auth, data.email, data.password);
       setMessage("Registration successful!");
-      navigate("/dashboard");
-    } catch (error) {
+      const redirectPath = localStorage.getItem("redirectAfterLogin") || "/";
+      localStorage.removeItem("redirectAfterLogin");
+      navigate(redirectPath);    } catch (error) {
       setMessage(error.message);
     }
   };
@@ -34,8 +35,9 @@ const Register = () => {
     try {
       await signInWithPopup(auth, googleProvider);
       setMessage("Google Sign-up successful!");
-      navigate("/dashboard");
-    } catch (error) {
+      const redirectPath = localStorage.getItem("redirectAfterLogin") || "/";
+      localStorage.removeItem("redirectAfterLogin");
+      navigate(redirectPath);    } catch (error) {
       setMessage(error.message);
     }
   };

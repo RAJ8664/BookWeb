@@ -4,9 +4,12 @@ import { FaCircleUser, FaRegHeart, FaChevronDown } from "react-icons/fa6";
 import { IoSearch, IoCart } from "react-icons/io5";
 import avatarImg from "../assets/avatar.png";
 import logoImg from "../assets/logo.png";
+import { useSelector } from "react-redux";
+
+import { useAuth } from "../context/AuthContext";
 
 const navigation = [
-  { name: "Dashboard", href: "/user-dashboard" },
+  { name: "Dashboard", href: "/dashboard" },
   { name: "Orders", href: "/orders" },
   { name: "Cart", href: "/cart" },
   { name: "Check Out", href: "/checkout" },
@@ -29,11 +32,16 @@ const secondaryNavigation = [
 ];
 
 const Navbar = () => {
+  const cartItems = useSelector(state => state.cart.cartItems);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const dropdownRef = useRef(null);
   const categoriesRef = useRef(null);
-  const currentUser = true;
+  
+  const { logout } = useAuth();
+
+  const user = useSelector(state => state.auth.user);
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -81,7 +89,7 @@ const Navbar = () => {
         <div className="relative flex items-center md:gap-4 gap-2">
           {/* User Avatar */}
           <div className="relative" ref={dropdownRef}>
-            {currentUser ? (
+            {user ? (
               <>
                 <button 
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -111,6 +119,19 @@ const Navbar = () => {
                         </li>
                       ))}
                     </ul>
+                    <li>
+                    <button
+                    onClick={() => {
+                    logout();
+                    setIsDropdownOpen(false);
+                  }}
+                  className="flex items-center w-full px-4 py-2.5 text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                  Logout
+                  </button>
+                  </li>
+
+                    
                   </div>
                 )}
               </>
@@ -136,7 +157,11 @@ const Navbar = () => {
           >
             <span className="text-sm hidden sm:inline">My Cart</span>
             <IoCart className="text-xl" />
-            <span className="absolute -top-2 -right-2 bg-white/20 px-2 py-0.5 rounded-full text-xs">2</span>
+            {
+              cartItems.length > 0 ? <span className="">{cartItems.length}</span> : <span className="">0</span>
+            }
+           
+            
           </Link>
         </div>
       </nav>

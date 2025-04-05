@@ -2,6 +2,11 @@ import React from "react";
 import { FiShoppingCart } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
+import { useDispatch } from "react-redux";
+import { addToCart } from "../../redux/features/cart/cartSlice";
+import { useSelector } from "react-redux";
+
+
 // Import all images from the assets folder dynamically
 const bookImages = import.meta.glob("../../assets/*.{png,jpg,jpeg,webp}");
 
@@ -20,6 +25,15 @@ const importBookImage = async (imageName) => {
 };
 
 const BookCard = ({ book }) => {
+  const dispatch = useDispatch();
+
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const isInCart = cartItems.some(item => item.id === book.id);
+
+  const handleAddToCart = (product) => {
+    dispatch(addToCart(product));
+
+  }
   const [imageSrc, setImageSrc] = React.useState("");
 
   React.useEffect(() => {
@@ -60,10 +74,17 @@ const BookCard = ({ book }) => {
     </p>
 
     {/* Add to Cart Button */}
-    <button className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer">
-      <FiShoppingCart className="text-lg" />
-      <span className="font-medium">Add to Cart</span>
-    </button>
+    <button 
+  onClick={() => handleAddToCart(book)}
+  disabled={isInCart}
+  className={`w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 
+    ${isInCart ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700'} 
+    text-white font-semibold rounded-lg transition-all transform hover:scale-[1.02] shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer`}>
+  <FiShoppingCart className="text-lg" />
+  <span className="font-medium">
+    {isInCart ? "Already in Cart" : "Add to Cart"}
+  </span>
+</button>
   </div>
 </div>
   );

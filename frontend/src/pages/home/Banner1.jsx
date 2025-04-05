@@ -8,7 +8,7 @@ const Banner1 = () => {
     const fetchBannerData = async () => {
       try {
         console.log("Fetching banner data...");
-        const response = await fetch("/banner1.json");
+        const response = await fetch("/banner1/banner1.json"); // Adjust the path as necessary
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
         const data = await response.json();
