@@ -1,5 +1,3 @@
-// src/components/firebaseconfig.jsx
-
 import { initializeApp } from "firebase/app";
 
 
@@ -14,23 +12,24 @@ import {
   signInWithPopup, 
   sendPasswordResetEmail, 
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword 
+  createUserWithEmailAndPassword,
+  signOut
 } from "firebase/auth";
 
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
+// Web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyA48GTPdtSwBn9oHazxGJjAym_eyM8VPu8",
-  authDomain: "bookweb-a1b39.firebaseapp.com",
-  projectId: "bookweb-a1b39",
-  storageBucket: "bookweb-a1b39.firebasestorage.app",
-  messagingSenderId: "481646674048",
-  appId: "1:481646674048:web:b282e3b06178af9531e665",
-  measurementId: "G-R9SELTK64T"
+  apiKey: import.meta.env.VITE_API_KEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID,
+  measurementId: import.meta.env.VITE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
@@ -46,7 +45,8 @@ export {
   signInWithPopup, 
   sendPasswordResetEmail, 
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword 
+  createUserWithEmailAndPassword,
+  signOut
 };
 
 export const storage = getStorage(app);

@@ -2,12 +2,13 @@ import React from 'react';
 import { useAuth } from "../context/AuthContext";
 import { FaBoxOpen, FaHeart, FaCog, FaHistory, FaUserCircle, FaImage} from 'react-icons/fa';
 import { FiLogOut } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import avatarImg from '../assets/avatar.png';
 import Swal from 'sweetalert2';
 
 const UserDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, uploadProfilePicture } = useAuth();
+  const navigate = useNavigate();
 
   const stats = [
     { title: "Total Orders", value: "4", icon: <FaBoxOpen />, color: "bg-blue-100 text-blue-600" },
@@ -25,8 +26,6 @@ const UserDashboard = () => {
     { title: 'Science Fundamentals', author: 'Science Writer', price: 'NPR 1500' },
   ];
 
-  const { uploadProfilePicture } = useAuth();
-
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -43,6 +42,15 @@ const UserDashboard = () => {
   
       // Close loader manually because it's async
       Swal.close();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
   };
 
@@ -185,7 +193,7 @@ const UserDashboard = () => {
               </Link>
 
               <button 
-                onClick={logout}
+                onClick={handleLogout}
                 className="px-6 py-3 bg-gradient-to-r from-red-100 to-pink-100 text-red-600 rounded-xl hover:shadow-md transition-all flex items-center gap-2"
               >
                 <FiLogOut className="text-lg" />

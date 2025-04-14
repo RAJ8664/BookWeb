@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaGoogle, FaEnvelope, FaLock, FaShieldAlt } from "react-icons/fa";
 import { useForm } from "react-hook-form";
+import { useAuth } from "../context/AuthContext";
 import {
   auth,
   googleProvider,
@@ -27,6 +28,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
+  const { loginUser, signInWithGoogle } = useAuth();
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("userEmail");
@@ -41,7 +43,8 @@ const Login = () => {
       setLoading(true);
       const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
       await setPersistence(auth, persistenceType);
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      
+      await loginUser(data.email, data.password);
 
       if (rememberMe) {
         localStorage.setItem("userEmail", data.email);
@@ -65,7 +68,9 @@ const Login = () => {
       setLoading(true);
       const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
       await setPersistence(auth, persistenceType);
-      await signInWithPopup(auth, googleProvider);
+      
+      await signInWithGoogle();
+      
       setMessage("Google login successful!");
 
       const redirectPath = localStorage.getItem("redirectAfterLogin") || "/";

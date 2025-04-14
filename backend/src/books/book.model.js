@@ -13,7 +13,8 @@ const bookSchema = new mongoose.Schema(
       type: String,
       required: [true, "Author is required"],
       trim: true,
-      minlength: [2, "Author name must be at least 2 characters"]
+      minlength: [2, "Author name must be at least 2 characters"],
+      maxlength: [100, "Author name cannot exceed 100 characters"]
     },
     category: {
       type: String,
@@ -37,10 +38,22 @@ const bookSchema = new mongoose.Schema(
       min: [0, "Price cannot be negative"]
     },
     coverImage: {
-      type: String, // URL or filename depending on storage
+      type: String,
       default: "default-book-cover.jpg"
     },
     trending: {
+      type: Boolean,
+      default: false
+    },
+    recommended: {
+      type: Boolean,
+      default: false
+    },
+    newArrival: {
+      type: Boolean,
+      default: false
+    },
+    bestSeller: {
       type: Boolean,
       default: false
     },
@@ -53,7 +66,18 @@ const bookSchema = new mongoose.Schema(
       min: 0,
       max: 5,
       default: 0
-    }
+    },
+    publishedDate: {
+      type: Date,
+      default: Date.now
+    },
+
+    language: {
+      type: String,
+      default: "English",
+      trim: true
+    },
+
   },
   { 
     timestamps: true,
@@ -62,12 +86,32 @@ const bookSchema = new mongoose.Schema(
   }
 );
 
-// Add index for better search performance
-bookSchema.index({ title: 'text', author: 'text', category: 'text' });
+// Add comprehensive indexes for better search performance
+bookSchema.index({ 
+  title: 'text', 
+  author: 'text', 
+  category: 'text',
+  description: 'text',
+  isbn: 'text'
+});
+
+// Index for filtering by categories and status
+bookSchema.index({ category: 1, trending: 1, bestSeller: 1, newArrival: 1 });
 
 // Virtual for formatted price
 bookSchema.virtual('formattedPrice').get(function() {
-  return `$${this.price.toFixed(2)}`;
+  return `Rs.${this.price.toFixed(2)}`;
 });
+
+// Virtual for book age in days
+bookSchema.virtual('ageInDays').get(function() {
+  return Math.floor((Date.now() - this.createdAt) / (1000 * 60 * 60 * 24));
+});
+
+// Method to check if book is on sale
+bookSchema.methods.isOnSale = function() {
+  // Logic to determine if book is on sale
+  return this.price < 1000; // Example condition
+};
 
 module.exports = mongoose.model("Book", bookSchema);

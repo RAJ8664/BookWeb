@@ -70,7 +70,7 @@ const BookCard = ({ book }) => {
 
     {/* Price Section */}
     <p className="font-semibold text-xl text-blue-700 my-3">
-      NPR {book.price.toFixed(2)}
+      {book.formattedPrice || `Rs. ${book.price.toFixed(2)}`}
     </p>
 
     {/* Add to Cart Button */}

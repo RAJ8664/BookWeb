@@ -5,26 +5,38 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { Pagination, Navigation } from "swiper/modules";
 import BookCard from "../books/BookCard";
+import { useFetchAllBooksQuery } from "../../redux/features/books/booksAPI";
 
 
 const BestSellers = () => {
-  const [bestSellers, setBestSellers] = useState([]);
+  const { data: books, isLoading, isError } = useFetchAllBooksQuery();
 
-  useEffect(() => {
-    const fetchBestSellers = async () => {
-      try {
-        const response = await fetch("/bestsellers.json"); // Fetch from public folder
-        if (!response.ok) throw new Error("Failed to load best sellers");
+  // Filter best seller books
+  const bestSellers = Array.isArray(books)
+    ? books.filter((book) => book.bestSeller === true)
+    : [];
 
-        const data = await response.json();
-        setBestSellers(data.bestsellers);
-      } catch (error) {
-        console.error("Error fetching best sellers:", error);
-      }
-    };
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-12 animate-pulse">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="bg-white p-4 rounded-xl shadow-md">
+            <div className="h-48 bg-gray-300 rounded mb-4"></div>
+            <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-    fetchBestSellers();
-  }, []);
+  if (isError) {
+    return (
+      <div className="text-center py-8 text-red-500">
+        Error loading BestSellers books. Please try again later.
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-6 py-16 bg-white-500">
@@ -34,7 +46,7 @@ const BestSellers = () => {
             Best Sellers
           </span>
         </h2>
-        <p className="text-lg text-gray-600 mt-2">Curated Selection Just For You</p>
+        <p className="text-lg text-gray-600 mt-2">Our most popular books that readers love</p>
       </div>
 
       {bestSellers.length === 0 ? (

@@ -42,7 +42,7 @@ const Banner2 = () => {
                 <img
                   src={banner.image}
                   alt={`Banner ${index + 1}`}
-                  className="w-full h-[200px] md:h-[350px] lg:h-[400px] object-cover transform transition-all duration-500 hover:scale-105"
+                  className="w-full h-[150px] md:h-[250px] lg:h-[300px] object-cover transform transition-all duration-500 hover:scale-105"
                 />
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/30 via-transparent to-transparent transition-opacity duration-300 group-hover:opacity-80"></div>

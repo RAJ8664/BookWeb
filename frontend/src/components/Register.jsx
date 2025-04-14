@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FaGoogle, FaEnvelope, FaLock, FaMobileAlt } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 import {
   auth,
   googleProvider,
@@ -17,15 +18,17 @@ const Register = () => {
   const [otp, setOtp] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
   const navigate = useNavigate();
+  const { registerUser, signInWithGoogle } = useAuth();
   
   // Email Registration
   const onSubmit = async (data) => {
     try {
-      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      await registerUser(data.email, data.password);
       setMessage("Registration successful!");
       const redirectPath = localStorage.getItem("redirectAfterLogin") || "/";
       localStorage.removeItem("redirectAfterLogin");
-      navigate(redirectPath);    } catch (error) {
+      navigate(redirectPath);    
+    } catch (error) {
       setMessage(error.message);
     }
   };
@@ -33,11 +36,12 @@ const Register = () => {
   // Google Registration
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithGoogle();
       setMessage("Google Sign-up successful!");
       const redirectPath = localStorage.getItem("redirectAfterLogin") || "/";
       localStorage.removeItem("redirectAfterLogin");
-      navigate(redirectPath);    } catch (error) {
+      navigate(redirectPath);    
+    } catch (error) {
       setMessage(error.message);
     }
   };

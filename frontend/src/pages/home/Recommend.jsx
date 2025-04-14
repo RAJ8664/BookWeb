@@ -5,24 +5,39 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { Pagination, Navigation } from "swiper/modules";
 import BookCard from "../books/BookCard";
+import { useFetchAllBooksQuery } from "../../redux/features/books/booksAPI";
 
 const Recommend = () => {
-  const [books, setBooks] = useState([]);
+  const { data: books, isLoading, isError } = useFetchAllBooksQuery();
 
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const response = await fetch("books.json");
-        if (!response.ok) throw new Error("Failed to load books");
-        const data = await response.json();
-        setBooks(data);
-      } catch (error) {
-        console.error("Error fetching books:", error);
-      }
-    };
+  // Filter best Recommended books
+  const recommended = Array.isArray(books)
+    ? books.filter((book) => book.recommended === true)
+    : [];
 
-    fetchBooks();
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-12 animate-pulse">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="bg-white p-4 rounded-xl shadow-md">
+            <div className="h-48 bg-gray-300 rounded mb-4"></div>
+            <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-8 text-red-500">
+        Error loading Recommended books. Please try again later.
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="container mx-auto px-6 py-16 bg-white-500">
@@ -64,7 +79,7 @@ const Recommend = () => {
           <div className="swiper-button-next !text-white !bg-gradient-to-r from-blue-600 to-purple-600 !w-12 !h-12 rounded-full shadow-lg hover:scale-105 transition-transform after:!text-xl"></div>
           <div className="swiper-button-prev !text-white !bg-gradient-to-r from-blue-600 to-purple-600 !w-12 !h-12 rounded-full shadow-lg hover:scale-105 transition-transform after:!text-xl"></div>
 
-          {books.map((book) => (
+          {recommended.map((book) => (
             <SwiperSlide 
               key={book.id} 
               className="pb-12 hover:-translate-y-2 transition-all duration-300"

@@ -1,21 +1,29 @@
 const express = require("express");
 const router = express.Router();
 const Book = require("./book.model");
+const { PostBook, getAllBooks, getSingleBook, updateBook, deleteBook } = require("./book.controller");
 
 // Post a new book
-router.post("/create-book", async (req, res) => {
+router.post("/create-book", PostBook);
 
-    try {
-        const newBook = await Book({...req.body});
-        await newBook.save();
-        res.status(200).send({message: "Book Posted successfully", book: newBook});
-    } catch (error) {
-        res.status(500).send({message: "Book posting failed", error: error.message});
-        console.log(error);
-        
-    }
+// Get all books
 
-})
+router.get("/", getAllBooks);
+
+// Get a single book
+router.get("/:id", getSingleBook);
+
+// Update a book
+router.put("/edit/:id", updateBook);
+
+// Delete a book
+router.delete("/delete/:id", deleteBook);
+
+
+
+
+
+
 
 module.exports = router;
 
