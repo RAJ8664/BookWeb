@@ -15,6 +15,11 @@ import UserDashboard from "../components/User-Dashboard";
 import UpdateProfile from "../components/UpdateProfile";
 import SingleBook from "../pages/books/singleBook";
 import OrdersPage from "../pages/books/orderPage";
+import AdminRoute from "./AdminRoute";
+import AdminLogin from "../components/AdminLogin"
+import DashboardLayout from "../pages/dashboard/DashboardLayout";
+import Dashboard from "../pages/dashboard/Dashboard";
+
 
 
 // Error boundary component
@@ -72,7 +77,7 @@ const router = createBrowserRouter([
       )
       },
       {
-        path: "/dashboard",
+        path: "/userdashboard",
         element: (
           <ProtectedRoute>
             <UserDashboard />
@@ -88,6 +93,34 @@ const router = createBrowserRouter([
         element: <SingleBook />
       },
       
+    ]
+  },
+  {
+    path: "/admin",
+    element: <AdminLogin /> 
+
+  },
+  {
+    path: "/dashboard",
+    element: <AdminRoute><DashboardLayout /></AdminRoute>,
+    children: [
+      {
+        path: "",
+        element: <AdminRoute><Dashboard /></AdminRoute>
+      },
+      {
+        path: "add-new-book",
+        element: <AdminRoute><div>Add New Book</div></AdminRoute>
+      },
+      {
+        path: "edit-book/:id",
+        element: <AdminRoute><div>Edit Book</div></AdminRoute>
+      },
+      {
+        path: "manage-books",
+        element: <AdminRoute><div>Manage Book</div></AdminRoute  >
+        
+      }
     ]
   }
 ]);

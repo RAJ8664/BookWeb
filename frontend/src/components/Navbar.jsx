@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: "📊" },
+  { name: "Dashboard", href: "/userdashboard", icon: "📊" },
   { name: "Orders", href: "/orders", icon: "📦" },
   { name: "Cart", href: "/cart", icon: "🛒" },
   { name: "Check Out", href: "/checkout", icon: "💳" },
