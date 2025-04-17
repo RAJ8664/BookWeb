@@ -25,9 +25,22 @@ export const AuthProvider = ({ children }) => {
   // Register a user
   const registerUser = async (email, password) => {
     try {
-      return await createUserWithEmailAndPassword(auth, email, password);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      Swal.fire({
+        icon: "success",
+        title: "Registration Successful",
+        text: "Your account has been created successfully!",
+        confirmButtonColor: "#3b82f6"
+      });
+      return result;
     } catch (error) {
       console.error("Registration error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Registration Failed",
+        text: error.message,
+        confirmButtonColor: "#3b82f6"
+      });
       throw error;
     }
   };
@@ -35,9 +48,24 @@ export const AuthProvider = ({ children }) => {
   // Login the user
   const loginUser = async (email, password) => {
     try {
-      return await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      Swal.fire({
+        icon: "success",
+        title: "Login Successful",
+        text: "Welcome back!",
+        confirmButtonColor: "#3b82f6",
+        timer: 1500,
+        showConfirmButton: false
+      });
+      return result;
     } catch (error) {
       console.error("Login error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Login Failed",
+        text: error.message,
+        confirmButtonColor: "#3b82f6"
+      });
       throw error;
     }
   };
@@ -45,9 +73,24 @@ export const AuthProvider = ({ children }) => {
   // Sign in with Google
   const signInWithGoogle = async () => {
     try {
-      return await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      Swal.fire({
+        icon: "success",
+        title: "Google Sign-in Successful",
+        text: "You've been signed in with Google!",
+        confirmButtonColor: "#3b82f6",
+        timer: 1500,
+        showConfirmButton: false
+      });
+      return result;
     } catch (error) {
       console.error("Google sign-in error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Google Sign-in Failed",
+        text: error.message,
+        confirmButtonColor: "#3b82f6"
+      });
       throw error;
     }
   };
@@ -56,9 +99,23 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await signOut(auth);
+      Swal.fire({
+        icon: "success",
+        title: "Logged Out",
+        text: "You have been successfully logged out!",
+        confirmButtonColor: "#3b82f6",
+        timer: 1500,
+        showConfirmButton: false
+      });
       return true;
     } catch (error) {
       console.error("Logout error:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Logout Failed",
+        text: error.message,
+        confirmButtonColor: "#3b82f6"
+      });
       throw error;
     }
   };
@@ -66,6 +123,12 @@ export const AuthProvider = ({ children }) => {
   // Upload and update profile picture
   const uploadProfilePicture = async (file) => {
     if (!auth.currentUser || !file) {
+      Swal.fire({
+        icon: "error",
+        title: "Upload Failed",
+        text: "User not authenticated or file not provided",
+        confirmButtonColor: "#3b82f6"
+      });
       throw new Error("User not authenticated or file not provided");
     }
   
@@ -73,6 +136,15 @@ export const AuthProvider = ({ children }) => {
     const storageRef = ref(storage, `profile_pictures/${auth.currentUser.uid}/${fileName}`);
   
     try {
+      Swal.fire({
+        title: "Uploading...",
+        text: "Please wait while we upload your profile picture",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      
       await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(storageRef);
   
@@ -101,6 +173,7 @@ export const AuthProvider = ({ children }) => {
         icon: "error",
         title: "Upload Failed",
         text: error.message,
+        confirmButtonColor: "#3b82f6"
       });
       throw error;
     }
@@ -109,10 +182,25 @@ export const AuthProvider = ({ children }) => {
   // Update user profile information
   const updateUserProfile = async (profileData) => {
     if (!auth.currentUser) {
+      Swal.fire({
+        icon: "error",
+        title: "Update Failed",
+        text: "User not authenticated",
+        confirmButtonColor: "#3b82f6"
+      });
       throw new Error("User not authenticated");
     }
     
     try {
+      Swal.fire({
+        title: "Updating Profile...",
+        text: "Please wait while we update your profile",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+      
       await updateProfile(auth.currentUser, profileData);
       
       // Update the current user state to reflect changes
@@ -136,6 +224,7 @@ export const AuthProvider = ({ children }) => {
         icon: "error",
         title: "Update Failed",
         text: error.message,
+        confirmButtonColor: "#3b82f6"
       });
       throw error;
     }

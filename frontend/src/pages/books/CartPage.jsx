@@ -44,11 +44,42 @@ const Cart = () => {
   );
 
   const handleRemove = (id) => {
-    dispatch(removeItem(id));
+    Swal.fire({
+      title: "Remove Item",
+      text: "Are you sure you want to remove this item from your cart?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, remove it!"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        dispatch(removeItem(id));
+        Swal.fire({
+          title: "Removed!",
+          text: "The item has been removed from your cart.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    });
   };
 
   const handleClearCart = () => {
-    dispatch(clearCart());
+    Swal.fire({
+      title: "Clear Cart",
+      text: "Are you sure you want to clear your entire cart?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, clear it!"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        dispatch(clearCart());
+      }
+    });
   };
 
   useEffect(() => {
@@ -84,7 +115,19 @@ const Cart = () => {
         }
       });
     } else {
-      navigate("/checkout");
+      Swal.fire({
+        title: "Proceed to Checkout?",
+        text: "You're about to proceed to the checkout page.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, proceed!"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/checkout");
+        }
+      });
     }
   };
   
@@ -137,13 +180,17 @@ const Cart = () => {
                     </h3>
                     <p className="text-gray-500 font-medium">{item.author}</p>
                     <p className="text-lg font-bold text-blue-700 mt-1">
-                      NPR {(item.price * item.quantity).toFixed(2)}
+                      Rs. {(item.price * item.quantity).toFixed(2)}
                     </p>
 
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-2 mt-2">
                       <button
-                        onClick={() => dispatch(decrementQuantity(item.id))}
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            dispatch(decrementQuantity(item.id));
+                          }
+                        }}
                         disabled={item.quantity <= 1}
                         className={`px-2 py-1 rounded cursor-pointer ${
                           item.quantity <= 1
@@ -157,7 +204,18 @@ const Cart = () => {
                         {item.quantity}
                       </span>
                       <button
-                        onClick={() => dispatch(incrementQuantity(item.id))}
+                        onClick={() => {
+                          dispatch(incrementQuantity(item.id));
+                          Swal.fire({
+                            title: "Quantity Updated",
+                            text: `Quantity increased to ${item.quantity + 1}`,
+                            icon: "success",
+                            timer: 1000,
+                            showConfirmButton: false,
+                            position: 'bottom-end',
+                            toast: true
+                          });
+                        }}
                         className="px-2 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 cursor-pointer"
                       >
                         +
@@ -182,7 +240,7 @@ const Cart = () => {
             <div className="space-y-2">
               <p className="text-2xl font-bold text-gray-900">Total Amount:</p>
               <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                NPR {totalPrice.toFixed(2)}
+                Rs. {totalPrice.toFixed(2)}
               </p>
             </div>
 

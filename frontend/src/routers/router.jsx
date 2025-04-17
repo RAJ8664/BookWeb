@@ -14,6 +14,8 @@ import CheckoutPage from "../pages/books/CheckoutPage"
 import UserDashboard from "../components/User-Dashboard";
 import UpdateProfile from "../components/UpdateProfile";
 import SingleBook from "../pages/books/singleBook";
+import OrdersPage from "../pages/books/orderPage";
+
 
 // Error boundary component
 const ErrorBoundary = () => {
@@ -43,7 +45,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/orders",
-        element: <div>Orders</div>
+        element: <ProtectedRoute><OrdersPage /></ProtectedRoute>
       },
       {
         path: "/about",
