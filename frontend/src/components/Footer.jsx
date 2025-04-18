@@ -5,21 +5,47 @@ import { Link } from "react-router-dom";
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setMessage("Please enter a valid email address.");
+      setIsSubmitting(false);
       return;
     }
 
-    // Simulating subscription (replace with actual API call)
-    setTimeout(() => {
+    try {
+      // Simulating API call with timeout
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setMessage("Thank you for subscribing!");
       setEmail(""); // Clear input after submission
-    }, 1000);
+    } catch (error) {
+      setMessage("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const currentYear = new Date().getFullYear();
+  
+  const quickLinks = [
+    { name: "Home", path: "/" },
+    { name: "Books", path: "/books" },
+    { name: "About Us", path: "/about" },
+    { name: "Contact", path: "/contact" },
+    { name: "Orders", path: "/orders" },
+    { name: "Wishlist", path: "/wishlist" }
+  ];
+
+  const socialLinks = [
+    { icon: FaFacebook, url: "https://www.facebook.com/profile.php?id=100014689416043", label: "Facebook" },
+    { icon: FaTwitter, url: "https://x.com/Bishal_Roy_10", label: "Twitter" },
+    { icon: FaInstagram, url: "https://www.instagram.com/vishal_roy_47/", label: "Instagram" },
+    { icon: FaLinkedin, url: "https://www.linkedin.com/in/bishal-roy-028386193", label: "LinkedIn" },
+  ];
 
   return (
     <footer className="bg-gray-900 text-gray-300 relative overflow-hidden">
@@ -35,16 +61,28 @@ const Footer = () => {
           <p className="text-sm text-gray-400 leading-relaxed">
             Discover worlds between pages.
           </p>
+          <div className="flex items-center space-x-2 text-sm text-gray-400">
+            <FaMapMarker className="text-blue-400" />
+            <span>123 Book Street, Reading City</span>
+          </div>
+          <div className="flex items-center space-x-2 text-sm text-gray-400">
+            <FaPhone className="text-blue-400" />
+            <span>+1 (555) 123-4567</span>
+          </div>
+          <div className="flex items-center space-x-2 text-sm text-gray-400">
+            <FaEnvelope className="text-blue-400" />
+            <span>contact@bookweb.com</span>
+          </div>
         </div>
 
         {/* Quick Links */}
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Explore</h3>
-          <ul className="space-y-3">
-            {["Home", "Books", "About Us", "Contact"].map((item, idx) => (
-              <li key={idx}>
-                <Link to={["/", "/books", "/about", "/contact"][idx]} className="hover:text-blue-400 transition">
-                  {item}
+          <ul className="space-y-3 grid grid-cols-2">
+            {quickLinks.map((link, idx) => (
+              <li key={idx} className="col-span-1">
+                <Link to={link.path} className="hover:text-blue-400 transition duration-300">
+                  {link.name}
                 </Link>
               </li>
             ))}
@@ -63,48 +101,51 @@ const Footer = () => {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full px-4 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-300"
+              aria-label="Email for newsletter"
             />
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className={`bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition-all duration-300 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
             >
-              Subscribe
+              {isSubmitting ? 'Subscribing...' : 'Subscribe'}
             </button>
-            {message && <p className="text-sm text-green-400">{message}</p>}
+            {message && (
+              <p className={`text-sm ${message.includes("valid") ? "text-yellow-400" : "text-green-400"} transition-all duration-300`}>
+                {message}
+              </p>
+            )}
           </form>
         </div>
 
-{/* Social Media */}
-<div>
-  <h3 className="text-lg font-semibold text-white mb-4">Follow Us</h3>
-  <div className="flex gap-4">
-    {[
-      { icon: FaFacebook, url: "https://www.facebook.com/profile.php?id=100014689416043" },
-      { icon: FaTwitter, url: "https://twitter.com/" },
-      { icon: FaInstagram, url: "https://www.instagram.com/vishal_roy_47/" },
-      { icon: FaLinkedin, url: "https://www.linkedin.com/in/bishal-roy-028386193" },
-    ].map(({ icon: Icon, url }, idx) => (
-      <a 
-        key={idx} 
-        href={url} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className="p-3 rounded-full bg-gray-800 hover:bg-blue-500 transition-all duration-300 flex items-center justify-center w-12 h-12"
-      >
-        <Icon className="text-xl text-white" />
-      </a>
-    ))}
-  </div>
-</div>
+        {/* Social Media */}
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-4">Follow Us</h3>
+          <div className="flex gap-4">
+            {socialLinks.map(({ icon: Icon, url, label }, idx) => (
+              <a 
+                key={idx} 
+                href={url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                aria-label={label}
+                className="p-3 rounded-full bg-gray-800 hover:bg-blue-500 hover:scale-110 transition-all duration-300 flex items-center justify-center w-12 h-12 shadow-lg"
+              >
+                <Icon className="text-xl text-white" />
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Copyright */}
       <div className="border-t border-gray-800 mt-8 py-6 text-center text-sm text-gray-400">
-        <p>&copy; {new Date().getFullYear()} BookWeb. All Rights Reserved.</p>
+        <p>&copy; {currentYear} BookWeb. All Rights Reserved.</p>
         <div className="flex justify-center space-x-4 text-xs mt-2">
-          <Link to="/privacy" className="hover:text-blue-400 transition">Privacy Policy</Link>
-          <Link to="/terms" className="hover:text-purple-400 transition">Terms of Service</Link>
+          <Link to="/privacy" className="hover:text-blue-400 transition duration-300">Privacy Policy</Link>
+          <Link to="/terms" className="hover:text-purple-400 transition duration-300">Terms of Service</Link>
+          <Link to="/faq" className="hover:text-green-400 transition duration-300">FAQ</Link>
         </div>
       </div>
     </footer>

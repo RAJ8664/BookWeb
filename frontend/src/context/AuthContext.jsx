@@ -5,7 +5,7 @@ import { auth, googleProvider, signInWithEmailAndPassword, createUserWithEmailAn
 import Swal from "sweetalert2";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../components/firebaseconfig";
-import { onAuthStateChanged, updateProfile } from "firebase/auth";
+import { onAuthStateChanged, updateProfile, updateEmail } from "firebase/auth";
 
 const AuthContext = createContext();
 
@@ -201,14 +201,35 @@ export const AuthProvider = ({ children }) => {
         }
       });
       
-      await updateProfile(auth.currentUser, profileData);
+      // Extract email from profileData, if it exists
+      const { email, ...otherProfileData } = profileData;
+      
+      // Update profile data
+      await updateProfile(auth.currentUser, otherProfileData);
+      
+      // Update email if provided and different from current
+      if (email && email !== auth.currentUser.email) {
+        try {
+          await updateEmail(auth.currentUser, email);
+        } catch (emailError) {
+          // If email update fails, still continue with other updates
+          console.error("Email update failed:", emailError);
+          Swal.fire({
+            icon: "warning",
+            title: "Email Update Failed",
+            text: "Profile updated successfully, but email could not be changed. You may need to re-login before changing email.",
+            confirmButtonColor: "#3b82f6"
+          });
+          return true;
+        }
+      }
       
       // Update the current user state to reflect changes
       setCurrentUser({ ...auth.currentUser });
       
       // Update Redux state
-      const { uid, email, displayName, photoURL } = auth.currentUser;
-      dispatch(setUser({ uid, email, displayName, photoURL }));
+      const { uid, email: currentEmail, displayName, photoURL } = auth.currentUser;
+      dispatch(setUser({ uid, email: currentEmail, displayName, photoURL }));
       
       Swal.fire({
         icon: "success",

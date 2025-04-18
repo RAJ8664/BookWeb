@@ -10,12 +10,9 @@ const baseQuery = fetchBaseQuery({
         }
         return headers;
     }
-
-
 })
 
-
-    const booksAPI = createApi({
+const booksAPI = createApi({
     reducerPath: 'booksAPI',
     baseQuery,
     tagTypes: ['Books'],
@@ -36,24 +33,88 @@ const baseQuery = fetchBaseQuery({
                 return response.book || response;
             }
         }),
+        searchBooks: builder.query({
+            query: (searchTerm) => `/search?query=${encodeURIComponent(searchTerm)}`,
+            transformResponse: (response) => {
+                return response.results || [];
+            }
+        }),
         addBook: builder.mutation({
-            query: (newbook) => ({
-                url: '/create-book',
-                method: 'POST',
-                body: newbook
-            }),
+            query: (bookData) => {
+                // Create a FormData object for multipart/form-data
+                const formData = new FormData();
+                
+                // Handle file upload for coverImage
+                if (bookData.coverImage instanceof File) {
+                    formData.append('coverImage', bookData.coverImage);
+                    
+                    // Handle other data fields, excluding the file object
+                    const { coverImage, ...restData } = bookData;
+                    Object.keys(restData).forEach(key => {
+                        // Convert boolean values to strings
+                        if (typeof restData[key] === 'boolean') {
+                            formData.append(key, restData[key].toString());
+                        } else {
+                            formData.append(key, restData[key]);
+                        }
+                    });
+                } else {
+                    // If not a File object, append all fields normally
+                    Object.keys(bookData).forEach(key => {
+                        if (typeof bookData[key] === 'boolean') {
+                            formData.append(key, bookData[key].toString());
+                        } else {
+                            formData.append(key, bookData[key]);
+                        }
+                    });
+                }
+                
+                return {
+                    url: '/create-book',
+                    method: 'POST',
+                    body: formData,
+                    // Don't set Content-Type, browser will set it with boundary
+                    formData: true
+                };
+            },
             invalidatesTags: ['Books']
         }),
         updateBook: builder.mutation({
-            query: ({ id, ...rest }) => ({
-                url: `/edit/${id}`,
-                method: 'PUT',
-                body: rest,
-                headers: {
-                    'Content-Type': 'application/json'
+            query: ({ id, ...bookData }) => {
+                // Create a FormData object for multipart/form-data
+                const formData = new FormData();
+                
+                // Handle file upload for coverImage
+                if (bookData.coverImage instanceof File) {
+                    formData.append('coverImage', bookData.coverImage);
+                    
+                    // Handle other data fields, excluding the file object
+                    const { coverImage, ...restData } = bookData;
+                    Object.keys(restData).forEach(key => {
+                        if (typeof restData[key] === 'boolean') {
+                            formData.append(key, restData[key].toString());
+                        } else {
+                            formData.append(key, restData[key]);
+                        }
+                    });
+                } else {
+                    // If not a File object, append all fields normally
+                    Object.keys(bookData).forEach(key => {
+                        if (typeof bookData[key] === 'boolean') {
+                            formData.append(key, bookData[key].toString());
+                        } else {
+                            formData.append(key, bookData[key]);
+                        }
+                    });
                 }
-
-            }),
+                
+                return {
+                    url: `/edit/${id}`,
+                    method: 'PUT',
+                    body: formData,
+                    formData: true
+                };
+            },
             invalidatesTags: ['Books']  
         }),
         deleteBook: builder.mutation({
@@ -66,6 +127,14 @@ const baseQuery = fetchBaseQuery({
     })
 })
 
-export const { useFetchAllBooksQuery, useFetchBookByIdQuery, useAddBookMutation, useUpdateBookMutation, useDeleteBookMutation } = booksAPI;
+export const { 
+    useFetchAllBooksQuery, 
+    useFetchBookByIdQuery, 
+    useSearchBooksQuery,
+    useAddBookMutation, 
+    useUpdateBookMutation, 
+    useDeleteBookMutation 
+} = booksAPI;
+
 export default booksAPI;
 

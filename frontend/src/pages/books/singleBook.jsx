@@ -128,10 +128,14 @@ const SingleBook = () => {
               className="relative"
             >
               <img 
-                src={`${getImgUrl(book.coverImage)}`} 
+                src={getImgUrl(book.coverImage)} 
                 alt={book.title} 
                 className="rounded-xl w-full object-cover object-center transform transition-all duration-500"
                 style={{ transformStyle: "preserve-3d" }}
+                onError={(e) => {
+                  console.log("Image load error, using fallback");
+                  e.target.src = getImgUrl('default-book-cover.jpg');
+                }}
               />
               
               {/* Decorative elements */}

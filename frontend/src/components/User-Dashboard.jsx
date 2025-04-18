@@ -1,30 +1,75 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from "../context/AuthContext";
-import { FaBoxOpen, FaHeart, FaCog, FaHistory, FaUserCircle, FaImage} from 'react-icons/fa';
+import { FaBoxOpen, FaHeart, FaCog, FaHistory, FaUserCircle, FaImage, FaShoppingBag, FaSearch, FaBook } from 'react-icons/fa';
 import { FiLogOut } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { setOrders, setOrderLoading } from '../redux/features/orders/ordersSlice';
+import { useGetOrderByEmailQuery } from '../redux/features/orders/ordersApi';
 import avatarImg from '../assets/avatar.png';
 import Swal from 'sweetalert2';
 
 const UserDashboard = () => {
   const { user, logout, uploadProfilePicture } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  // Get wishlist items from Redux store
+  const wishlistItems = useSelector(state => state.wishlist.wishlistItems);
+  
+  // Get orders from Redux store
+  const { orders, loading: ordersLoading } = useSelector(state => state.orders);
+  
+  // Fetch actual orders using RTK Query
+  const { 
+    data: apiOrders, 
+    isLoading: apiOrdersLoading, 
+    isError: apiOrdersError 
+  } = useGetOrderByEmailQuery(user?.email, {
+    skip: !user?.email
+  });
 
-  const stats = [
-    { title: "Total Orders", value: "4", icon: <FaBoxOpen />, color: "bg-blue-100 text-blue-600" },
-    { title: "Wishlist Items", value: "12", icon: <FaHeart />, color: "bg-pink-100 text-pink-600" },
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState([
+    { title: "Total Orders", value: "0", icon: <FaBoxOpen />, color: "bg-blue-100 text-blue-600" },
+    { title: "Wishlist Items", value: "0", icon: <FaHeart />, color: "bg-pink-100 text-pink-600" },
     { title: "Account Status", value: "Active", icon: <FaUserCircle />, color: "bg-green-100 text-green-600" },
-  ];
+  ]);
 
-  const recentOrders = [
-    { id: '#1234', date: '2023-07-15', total: 'NPR 2450', status: 'Delivered' },
-    { id: '#1235', date: '2023-07-18', total: 'NPR 1850', status: 'Processing' },
-  ];
-
-  const wishlistItems = [
-    { title: 'The Great Novel', author: 'Author Name', price: 'NPR 1200' },
-    { title: 'Science Fundamentals', author: 'Science Writer', price: 'NPR 1500' },
-  ];
+  // Fetch user's data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        dispatch(setOrderLoading(true));
+        
+        if (apiOrders) {
+          // Use real orders from API
+          dispatch(setOrders(apiOrders));
+        }
+        
+        setLoading(false);
+        dispatch(setOrderLoading(false));
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setLoading(false);
+        dispatch(setOrderLoading(false));
+      }
+    };
+    
+    fetchUserData();
+  }, [user, dispatch, apiOrders]);
+  
+  // Update stats when orders or wishlist changes
+  useEffect(() => {
+    setStats([
+      { title: "Total Orders", value: orders.length.toString(), icon: <FaBoxOpen />, color: "bg-blue-100 text-blue-600" },
+      { title: "Wishlist Items", value: wishlistItems.length.toString(), icon: <FaHeart />, color: "bg-pink-100 text-pink-600" },
+      { title: "Account Status", value: "Active", icon: <FaUserCircle />, color: "bg-green-100 text-green-600" },
+    ]);
+  }, [orders, wishlistItems]);
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
@@ -54,6 +99,37 @@ const UserDashboard = () => {
     }
   };
 
+  // Format date to more readable format
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  // Get status color based on order status
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'delivered':
+        return 'bg-green-100 text-green-700';
+      case 'shipped':
+        return 'bg-blue-100 text-blue-700';
+      case 'processing':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  // Loading state
+  if (loading || apiOrdersLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-4xl font-bold text-gray-900 mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
@@ -70,7 +146,7 @@ const UserDashboard = () => {
                 <img 
                   src={user?.photoURL || avatarImg} 
                   alt="User avatar" 
-                  className="w-24 h-24 rounded-full mb-4 border-4 border-white shadow-lg hover:scale-105 transition-transform"
+                  className="w-24 h-24 rounded-full mb-4 border-4 border-white shadow-lg hover:scale-105 transition-transform object-cover"
                 />
                 <label className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-md cursor-pointer hover:bg-gray-100 transition">
                   <FaImage className="text-blue-600" />
@@ -85,7 +161,7 @@ const UserDashboard = () => {
           {/* Navigation Menu */}
           <nav className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100 space-y-2">
             {[
-              { path: "/dashboard", icon: <FaUserCircle />, text: "Dashboard" },
+              { path: "/userdashboard", icon: <FaUserCircle />, text: "Dashboard" },
               { path: "/orders", icon: <FaHistory />, text: "Order History" },
               { path: "/wishlist", icon: <FaHeart />, text: "Wishlist" },
               { path: "/settings", icon: <FaCog />, text: "Settings" },
@@ -128,27 +204,48 @@ const UserDashboard = () => {
             </h3>
             
             <div className="space-y-4">
-              {recentOrders.map((order) => (
-                <div 
-                  key={order.id} 
-                  className="flex justify-between items-center p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-all"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">Order {order.id}</p>
-                    <p className="text-sm text-gray-500 mt-1">{order.date}</p>
+              {orders.length > 0 ? (
+                orders.slice(0, 3).map((order) => (
+                  <div 
+                    key={order._id || order.id} 
+                    className="flex justify-between items-center p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-all hover:shadow-sm"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">Order #{order._id?.substring(0, 8) || order.id}</p>
+                      <p className="text-sm text-gray-500 mt-1">{formatDate(order.createdAt || order.date)}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {order.products ? `${order.products.length} ${order.products.length === 1 ? 'item' : 'items'}` :
+                         order.items ? `${order.items.length} ${order.items.length === 1 ? 'item' : 'items'}` : ''}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-gray-900">
+                        ₹{order.totalPrice || (order.total?.replace(/[^\d.]/g, '') || '0')}
+                      </p>
+                      <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-medium mt-2 ${getStatusColor(order.status)}`}>
+                        {order.status || 'Processing'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-gray-900">{order.total}</p>
-                    <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-                      order.status === 'Delivered' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {order.status}
-                    </span>
-                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <FaShoppingBag className="text-4xl text-gray-300 mb-3" />
+                  <p className="text-gray-500 mb-1">You haven't placed any orders yet</p>
+                  <Link to="/" className="mt-3 text-blue-500 hover:text-blue-700 font-medium">
+                    Browse Books
+                  </Link>
                 </div>
-              ))}
+              )}
+              
+              {orders.length > 0 && (
+                <Link 
+                  to="/orders" 
+                  className="flex items-center justify-center mt-4 py-2 text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  View All Orders <span className="ml-1">→</span>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -159,21 +256,52 @@ const UserDashboard = () => {
               Wishlist Items
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {wishlistItems.map((item, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-center p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-all group"
-                >
-                  <div className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-xl group-hover:scale-105 transition-transform"></div>
-                  <div className="ml-4">
-                    <p className="font-medium text-gray-900">{item.title}</p>
-                    <p className="text-sm text-gray-500 mt-1">{item.author}</p>
-                    <p className="text-blue-600 font-medium mt-2">{item.price}</p>
+            {wishlistItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {wishlistItems.slice(0, 4).map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-all group"
+                  >
+                    <div className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-xl group-hover:scale-105 transition-transform flex items-center justify-center">
+                      {item.coverImage ? (
+                        <img 
+                          src={item.coverImage} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                      ) : (
+                        <FaBook className="text-2xl text-gray-400" />
+                      )}
+                    </div>
+                    <div className="ml-4 flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{item.title}</p>
+                      <p className="text-sm text-gray-500 mt-1 truncate">{item.author}</p>
+                      <p className="text-blue-600 font-medium mt-2">
+                        {item.formattedPrice || `₹${item.price?.toFixed(2) || '0.00'}`}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+                
+                {wishlistItems.length > 4 && (
+                  <Link 
+                    to="/wishlist" 
+                    className="flex items-center justify-center col-span-full mt-4 py-2 text-pink-600 hover:text-pink-800 font-medium"
+                  >
+                    View All Wishlist Items <span className="ml-1">→</span>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <FaSearch className="text-4xl text-gray-300 mb-3" />
+                <p className="text-gray-500 mb-1">Your wishlist is empty</p>
+                <Link to="/" className="mt-3 text-blue-500 hover:text-blue-700 font-medium">
+                  Discover Books
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Quick Actions */}
@@ -185,11 +313,11 @@ const UserDashboard = () => {
             
             <div className="flex flex-wrap gap-4">
               <Link 
-                to="/update-profile"
+                to="/settings"
                 className="px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-600 rounded-xl hover:shadow-md transition-all flex items-center gap-2"
               >
                 <FaUserCircle className="text-lg" />
-                Edit Profile
+                Account Settings
               </Link>
 
               <button 

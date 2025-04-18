@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaCircleUser, FaRegHeart, FaChevronDown } from "react-icons/fa6";
 import { IoSearch, IoCart } from "react-icons/io5";
 import avatarImg from "../assets/avatar.png";
 import logoImg from "../assets/logo.png";
 import { useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
+import { useSearchBooksQuery } from "../redux/features/books/booksAPI";
+import { FaBook } from "react-icons/fa";
 
 const navigation = [
   { name: "Dashboard", href: "/userdashboard", icon: "📊" },
@@ -26,20 +28,32 @@ const secondaryNavigation = [
   { name: "New Arrivals", href: "/new-arrivals" },
   { name: "Best Sellers", href: "/best-sellers" },
   { name: "Award Winners", href: "/award-winners" },
-  { name: "Featured Authors", href: "/featured-authors" },
   { name: "Request a Book", href: "/request-book" },
 ];
 
 const Navbar = () => {
   const cartItems = useSelector(state => state.cart.cartItems);
+  const wishlistItems = useSelector(state => state.wishlist.wishlistItems);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const dropdownRef = useRef(null);
   const categoriesRef = useRef(null);
   const searchInputRef = useRef(null);
+  const searchResultsRef = useRef(null);
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const user = useSelector(state => state.auth.user);
+
+  // Use RTK Query for search with debouncing
+  const {
+    data: searchResults,
+    isLoading: isSearching,
+    isFetching,
+  } = useSearchBooksQuery(searchQuery, {
+    skip: searchQuery.length < 3,
+  });
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -49,26 +63,44 @@ const Navbar = () => {
       if (categoriesRef.current && !categoriesRef.current.contains(event.target)) {
         setIsCategoriesOpen(false);
       }
+      if (searchResultsRef.current && !searchResultsRef.current.contains(event.target) && 
+          searchInputRef.current && !searchInputRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Show search results when we have a query and results
+  useEffect(() => {
+    if (searchQuery.length >= 3 && searchResults && searchResults.length > 0) {
+      setShowSearchResults(true);
+    } else if (searchQuery.length < 3) {
+      setShowSearchResults(false);
+    }
+  }, [searchQuery, searchResults]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Implement search functionality here
-      console.log(`Searching for: ${searchQuery}`);
-      // Could redirect to search results page
-      // navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setShowSearchResults(false);
     }
+  };
+
+  const handleSearchItemClick = (bookId) => {
+    navigate(`/books/${bookId}`);
+    setShowSearchResults(false);
+    setSearchQuery("");
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Escape') {
       setIsDropdownOpen(false);
       setIsCategoriesOpen(false);
+      setShowSearchResults(false);
     }
   };
 
@@ -94,30 +126,96 @@ const Navbar = () => {
             />
           </Link>
 
-          <form onSubmit={handleSearch} className="relative sm:w-80 w-48 group">
-            <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search 1M+ titles..."
-              aria-label="Search books"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl pl-10 pr-4 py-2.5
-                        focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200
-                        transition-all duration-200 placeholder-gray-400 text-gray-700"
-            />
-            {searchQuery && (
-              <button 
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                aria-label="Clear search"
+          <div className="relative sm:w-80 w-48 group">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search..."
+                aria-label="Search books"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchQuery.length >= 3 && searchResults && searchResults.length > 0) {
+                    setShowSearchResults(true);
+                  }
+                }}
+                className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl pl-10 pr-4 py-2.5
+                          focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+                          transition-all duration-200 placeholder-gray-400 text-gray-700"
+              />
+              {searchQuery && (
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSearchResults(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </form>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && (
+              <div 
+                ref={searchResultsRef}
+                className="absolute z-30 top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto"
               >
-                ✕
-              </button>
+                {isSearching || isFetching ? (
+                  <div className="p-4 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Searching...</p>
+                  </div>
+                ) : searchResults && searchResults.length > 0 ? (
+                  <ul>
+                    {searchResults.map((book) => (
+                      <li 
+                        key={book._id} 
+                        onClick={() => handleSearchItemClick(book._id)}
+                        className="p-3 border-b border-gray-100 hover:bg-blue-50 flex items-center cursor-pointer transition-colors"
+                      >
+                        <div className="flex-shrink-0 mr-3">
+                          {book.coverImage ? (
+                            <img 
+                              src={book.coverImage} 
+                              alt={book.title}
+                              className="h-14 w-10 object-cover rounded-md shadow-sm"
+                            />
+                          ) : (
+                            <div className="h-14 w-10 flex items-center justify-center bg-blue-100 rounded-md">
+                              <FaBook className="text-blue-600" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{book.title}</p>
+                          <p className="text-sm text-gray-500 truncate">by {book.author}</p>
+                          <p className="text-sm text-blue-600 mt-1">₹{book.price?.toFixed(2) || '0.00'}</p>
+                        </div>
+                      </li>
+                    ))}
+                    <li className="p-2 bg-gray-50 text-center">
+                      <button 
+                        onClick={handleSearch}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        See all results
+                      </button>
+                    </li>
+                  </ul>
+                ) : searchQuery.length >= 3 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    No books found matching "{searchQuery}"
+                  </div>
+                ) : null}
+              </div>
             )}
-          </form>
+          </div>
         </div>
 
         {/* Right Section */}
@@ -187,13 +285,18 @@ const Navbar = () => {
             )}
           </div>
 
-          <button 
-            className="relative hidden sm:block text-gray-600 hover:text-red-500 p-2 rounded-full hover:bg-gray-100 transition-colors" 
+          <Link
+            to="/wishlist"
+            className="relative hidden sm:block text-gray-600 hover:text-red-500 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer" 
             aria-label="Wishlist"
           >
             <FaRegHeart className="size-6" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 rounded-full">0</span>
-          </button>
+            {wishlistItems.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 rounded-full">
+                {wishlistItems.length}
+              </span>
+            )}
+          </Link>
 
           <Link
             to="/cart"

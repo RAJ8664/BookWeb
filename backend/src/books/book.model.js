@@ -110,8 +110,8 @@ bookSchema.virtual('ageInDays').get(function() {
 
 // Method to check if book is on sale
 bookSchema.methods.isOnSale = function() {
-  // Logic to determine if book is on sale
-  return this.price < 1000; // Example condition
+  // This is just an example condition - it doesn't actually modify the price
+  return this.price < 2000; 
 };
 
 module.exports = mongoose.model("Book", bookSchema);

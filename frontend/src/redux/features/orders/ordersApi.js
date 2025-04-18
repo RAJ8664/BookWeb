@@ -5,28 +5,59 @@ import getBaseUrl from "../../../utils/baseURL";
 const ordersApi = createApi({
     reducerPath: 'ordersApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: `${getBaseUrl()}/api/orders`,
-        credentials: 'include'
+        baseUrl: 'http://localhost:5000/api/',
     }),
-    tagTypes: ['Orders'],
+    tagTypes: ['Order'],
     endpoints: (builder) => ({
-        createOrder: (builder.mutation) ({
-            query: (newOrder) => ({
-                url: "/",
-                method: "POST",
-                body: newOrder,
-                credentials: 'include',
-            })
-        }),
-        getOrderByEmail: (builder.query) ({
-            query: (email) => ({
-                url: `/email/${email}`
+        createOrder: builder.mutation({
+            query: (data) => ({
+                url: 'orders',
+                method: 'POST',
+                body: data,
             }),
-            providesTags: ['Orders']
+            invalidatesTags: ['Order'],
+        }),
+        getOrderByEmail: builder.query({
+            query: (email) => `orders/email/${email}`,
+            providesTags: ['Order'],
+        }),
+        getAllOrders: builder.query({
+            query: () => 'orders',
+            providesTags: ['Order'],
+        }),
+        updateOrderStatus: builder.mutation({
+            query: ({id, status}) => ({
+                url: `orders/${id}/status`,
+                method: "PUT",
+                body: { status }
+            }),
+            invalidatesTags: ['Order']
+        }),
+        cancelOrder: builder.mutation({
+            query: (id) => ({
+                url: `orders/${id}/cancel`,
+                method: 'PUT',
+            }),
+            invalidatesTags: ['Order'],
+        }),
+        requestRefund: builder.mutation({
+            query: ({id, refundReason}) => ({
+                url: `orders/${id}/refund`,
+                method: 'PUT',
+                body: { refundReason },
+            }),
+            invalidatesTags: ['Order'],
         })
     })
 })
 
-export const {useCreateOrderMutation, useGetOrderByEmailQuery} = ordersApi;
+export const {
+    useCreateOrderMutation, 
+    useGetOrderByEmailQuery,
+    useGetAllOrdersQuery,
+    useUpdateOrderStatusMutation,
+    useCancelOrderMutation,
+    useRequestRefundMutation
+} = ordersApi;
 
 export default ordersApi;

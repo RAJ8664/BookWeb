@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useGetOrderByEmailQuery } from '../../redux/features/orders/ordersApi';
+import { 
+  useGetOrderByEmailQuery, 
+  useCancelOrderMutation,
+  useRequestRefundMutation 
+} from '../../redux/features/orders/ordersApi';
 import { useNavigate, Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
@@ -15,6 +19,9 @@ const OrdersPage = () => {
     user?.email,
     { skip: !user?.email }
   );
+  
+  const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
+  const [requestRefund, { isLoading: isRefunding }] = useRequestRefundMutation();
 
   // Memoized sorting and filtering logic
   const processedOrders = useMemo(() => {
@@ -97,20 +104,97 @@ const OrdersPage = () => {
     });
   };
 
+  const handleCancelOrder = (orderId) => {
+    Swal.fire({
+      title: 'Cancel Order',
+      text: 'Are you sure you want to cancel this order?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, cancel it!',
+      cancelButtonText: 'No, keep it',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        cancelOrder(orderId)
+          .unwrap()
+          .then(() => {
+            Swal.fire(
+              'Cancelled!',
+              'Your order has been cancelled.',
+              'success'
+            );
+            refetch();
+          })
+          .catch((error) => {
+            Swal.fire(
+              'Error!',
+              error?.data?.message || 'Failed to cancel the order. Please try again.',
+              'error'
+            );
+          });
+      }
+    });
+  };
+  
+  const handleRequestRefund = (orderId) => {
+    Swal.fire({
+      title: 'Request Refund',
+      html: `
+        <p>Please provide a reason for your refund request:</p>
+        <textarea id="refundReason" class="swal2-textarea" placeholder="Enter your reason here..."></textarea>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Submit Refund Request',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      preConfirm: () => {
+        const reason = document.getElementById('refundReason').value;
+        if (!reason) {
+          Swal.showValidationMessage('Please enter a reason for your refund request');
+        }
+        return reason;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        requestRefund({ id: orderId, refundReason: result.value })
+          .unwrap()
+          .then(() => {
+            Swal.fire(
+              'Request Submitted!',
+              'Your refund request has been submitted successfully.',
+              'success'
+            );
+            refetch();
+          })
+          .catch((error) => {
+            Swal.fire(
+              'Error!',
+              error?.data?.message || 'Failed to submit refund request. Please try again.',
+              'error'
+            );
+          });
+      }
+    });
+  };
+
   const renderOrderStatus = (status) => {
     const statusConfig = {
-      'Delivered': { bgColor: 'bg-green-100', textColor: 'text-green-700', icon: '✓' },
-      'Shipped': { bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', icon: '🚚' },
-      'Cancelled': { bgColor: 'bg-red-100', textColor: 'text-red-700', icon: '✕' },
-      'Pending': { bgColor: 'bg-gray-100', textColor: 'text-gray-700', icon: '⏳' }
+      'delivered': { bgColor: 'bg-green-100', textColor: 'text-green-700', icon: '✓' },
+      'shipped': { bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', icon: '🚚' },
+      'cancelled': { bgColor: 'bg-red-100', textColor: 'text-red-700', icon: '✕' },
+      'pending': { bgColor: 'bg-gray-100', textColor: 'text-gray-700', icon: '⏳' },
+      'processing': { bgColor: 'bg-blue-100', textColor: 'text-blue-700', icon: '🔄' },
+      'refunded': { bgColor: 'bg-purple-100', textColor: 'text-purple-700', icon: '💰' }
     };
     
-    const config = statusConfig[status] || statusConfig['Pending'];
+    const config = statusConfig[status?.toLowerCase()] || statusConfig['pending'];
     
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${config.bgColor} ${config.textColor}`}>
         <span>{config.icon}</span>
-        <span>{status || 'Pending'}</span>
+        <span>{status || 'pending'}</span>
       </span>
     );
   };
@@ -213,15 +297,45 @@ const OrdersPage = () => {
                       })}
                     </span>
                     {renderOrderStatus(order.status)}
-                    <button
-                      onClick={() => downloadInvoice(order)}
-                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                      </svg>
-                      Invoice
-                    </button>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <button
+                        onClick={() => downloadInvoice(order)}
+                        className="text-sm px-3 py-1 border border-blue-300 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 flex items-center gap-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                        </svg>
+                        Invoice
+                      </button>
+                      
+                      {/* Cancel button - only for pending orders */}
+                      {order.status?.toLowerCase() === 'pending' && (
+                        <button
+                          onClick={() => handleCancelOrder(order._id)}
+                          disabled={isCancelling}
+                          className="text-sm px-3 py-1 border border-red-300 bg-red-50 text-red-600 rounded-md hover:bg-red-100 flex items-center gap-1"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Cancel Order
+                        </button>
+                      )}
+                      
+                      {/* Refund button - only for delivered or shipped orders */}
+                      {(order.status?.toLowerCase() === 'delivered' || order.status?.toLowerCase() === 'shipped') && (
+                        <button
+                          onClick={() => handleRequestRefund(order._id)}
+                          disabled={isRefunding}
+                          className="text-sm px-3 py-1 border border-purple-300 bg-purple-50 text-purple-600 rounded-md hover:bg-purple-100 flex items-center gap-1"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                          </svg>
+                          Request Refund
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

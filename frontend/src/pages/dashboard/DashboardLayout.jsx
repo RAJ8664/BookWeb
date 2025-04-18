@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiSearch, FiBell, FiMoon, FiSun, FiSettings, FiX } from 'react-icons/fi';
-import { FaChartBar, FaBook, FaUsers, FaPlus, FaEdit } from 'react-icons/fa';
+import { FaChartBar, FaBook, FaUsers, FaPlus, FaEdit, FaBoxOpen, FaFileAlt } from 'react-icons/fa';
 import { HiViewGridAdd } from "react-icons/hi";
 import { MdOutlineManageHistory } from "react-icons/md";
 import Loading from '../../components/Loading';
 import { toast } from 'react-toastify';
+import { useGetAllOrdersQuery } from '../../redux/features/orders/ordersApi';
+import { useFetchAllBooksQuery, useSearchBooksQuery } from '../../redux/features/books/booksAPI';
+import { useGetUnreadRequestsCountQuery } from '../../redux/features/bookRequest/bookRequestApi';
 
 // Add custom useWindowSize hook
 const useWindowSize = () => {
@@ -50,11 +53,7 @@ const DashboardLayout = () => {
     return saved !== null ? JSON.parse(saved) : false;
   });
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'order', message: 'New order received #ORD-2023', time: '5 min ago', read: false },
-    { id: 2, type: 'user', message: 'New user registration', time: '1 hour ago', read: false },
-    { id: 3, type: 'system', message: 'System update scheduled for tonight', time: '2 hours ago', read: true },
-  ]);
+  const [notifications, setNotifications] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -62,6 +61,157 @@ const DashboardLayout = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Fetch orders and books data for real notifications
+  const { data: ordersData, isLoading: ordersLoading } = useGetAllOrdersQuery();
+  const { data: booksData, isLoading: booksLoading } = useFetchAllBooksQuery();
+  const { data: unreadRequestsData, isLoading: unreadRequestsLoading } = useGetUnreadRequestsCountQuery();
+  const lastProcessedOrderRef = useRef(null);
+
+  // Use RTK Query for search with debouncing
+  const {
+    data: apiSearchResults,
+    isLoading: apiSearchLoading,
+    isFetching: apiSearchFetching
+  } = useSearchBooksQuery(searchQuery, {
+    skip: searchQuery.length < 3
+  });
+  
+  // Set search results from API
+  useEffect(() => {
+    if (apiSearchResults) {
+      // Transform book search results to the format expected by the UI
+      const formattedResults = apiSearchResults.map(book => ({
+        type: 'book',
+        title: book.title,
+        id: book._id,
+        coverImage: book.coverImage,
+        author: book.author,
+        price: book.price
+      }));
+      
+      // Add order results if search term matches order data
+      if (ordersData && searchQuery.length >= 3) {
+        const orderResults = ordersData
+          .filter(order => 
+            order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.email?.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+          .slice(0, 3)
+          .map(order => ({
+            type: 'order',
+            id: order._id,
+            customer: order.name || 'Customer',
+            email: order.email,
+            total: order.totalPrice
+          }));
+        
+        formattedResults.push(...orderResults);
+      }
+      
+      setSearchResults(formattedResults);
+      setIsSearching(false);
+    }
+  }, [apiSearchResults, ordersData, searchQuery]);
+  
+  // Generate real notifications based on orders and user activity
+  useEffect(() => {
+    if (ordersData && ordersData.length > 0) {
+      // Sort orders by creation date (newest first)
+      const sortedOrders = [...ordersData].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      
+      // Get the most recent order
+      const latestOrder = sortedOrders[0];
+      
+      // Only create notification for new orders since last check
+      if (lastProcessedOrderRef.current !== latestOrder._id) {
+        // Generate notifications from recent orders
+        const newNotifications = sortedOrders.slice(0, 5).map(order => {
+          const orderTime = new Date(order.createdAt);
+          const now = new Date();
+          const diffTime = Math.abs(now - orderTime);
+          const diffMinutes = Math.floor(diffTime / (1000 * 60));
+          const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          
+          let timeString = 'Just now';
+          if (diffMinutes > 1 && diffMinutes < 60) {
+            timeString = `${diffMinutes} minutes ago`;
+          } else if (diffHours >= 1 && diffHours < 24) {
+            timeString = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+          } else if (diffDays >= 1) {
+            timeString = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+          }
+          
+          return {
+            id: order._id,
+            type: 'order',
+            message: `New order from ${order.name} - ₹${order.totalPrice}`,
+            time: timeString,
+            read: false
+          };
+        });
+        
+        // Add notifications for book requests
+        if (unreadRequestsData && unreadRequestsData.unreadCount > 0) {
+          const bookRequestNotification = {
+            id: `book-request-${Date.now()}`,
+            type: 'book-request',
+            message: `${unreadRequestsData.unreadCount} new book ${unreadRequestsData.unreadCount === 1 ? 'request' : 'requests'} pending review`,
+            time: 'Just now',
+            read: false,
+            action: '/dashboard/manage-book-requests'
+          };
+          
+          newNotifications.unshift(bookRequestNotification);
+        }
+        
+        // Add notifications for new books (if any)
+        if (booksData && booksData.length > 0) {
+          // Use the 3 most recently added books
+          const recentBooks = booksData.slice(0, 3);
+          
+          const bookNotifications = recentBooks.map((book, index) => ({
+            id: `book-${book._id || book.id}`,
+            type: 'book',
+            message: `Book "${book.title}" is now available`,
+            time: `${index + 1} hour${index > 0 ? 's' : ''} ago`,
+            read: false
+          }));
+          
+          // Combine order and book notifications
+          setNotifications(prev => {
+            // Only add new notifications, don't duplicate existing ones
+            const existingIds = prev.map(n => n.id);
+            const combinedNotifications = [
+              ...newNotifications.filter(n => !existingIds.includes(n.id)),
+              ...bookNotifications.filter(n => !existingIds.includes(n.id)),
+              ...prev
+            ].slice(0, 20); // Keep only the 20 most recent notifications
+            
+            return combinedNotifications;
+          });
+        } else {
+          // Just add order notifications if no book data
+          setNotifications(prev => {
+            const existingIds = prev.map(n => n.id);
+            return [
+              ...newNotifications.filter(n => !existingIds.includes(n.id)),
+              ...prev
+            ].slice(0, 20);
+          });
+        }
+        
+        // Update the last processed order
+        if (latestOrder) {
+          lastProcessedOrderRef.current = latestOrder._id;
+        }
+      }
+    }
+  }, [ordersData, booksData, unreadRequestsData]);
   
   useEffect(() => {
     // Apply dark mode to body when theme changes
@@ -119,23 +269,6 @@ const DashboardLayout = () => {
     };
     
     fetchAdminInfo();
-    
-    // Mock fetch notifications - in a real app, this might be websocket
-    const notificationInterval = setInterval(() => {
-      // Simulate random new notification every 30 seconds
-      if (Math.random() > 0.7) {
-        const newNotif = {
-          id: Date.now(),
-          type: ['order', 'user', 'system'][Math.floor(Math.random() * 3)],
-          message: `New ${['order', 'user', 'system'][Math.floor(Math.random() * 3)]} activity`,
-          time: 'Just now',
-          read: false
-        };
-        setNotifications(prev => [newNotif, ...prev]);
-      }
-    }, 30000);
-    
-    return () => clearInterval(notificationInterval);
   }, [navigate]);
 
   const handleLogout = () => {
@@ -166,19 +299,7 @@ const DashboardLayout = () => {
     setSearchQuery(e.target.value);
     if (e.target.value.length > 2) {
       setIsSearching(true);
-      // Mock search functionality
-      setTimeout(() => {
-        setSearchResults([
-          { type: 'book', title: 'Harry Potter', id: 1 },
-          { type: 'user', name: 'John Doe', id: 2 },
-          { type: 'order', id: 'ORD-2025', customer: 'Jane Smith' }
-        ].filter(item => 
-          Object.values(item).some(value => 
-            String(value).toLowerCase().includes(e.target.value.toLowerCase())
-          )
-        ));
-        setIsSearching(false);
-      }, 500);
+      // API search is handled by the RTK Query hook
     } else {
       setSearchResults([]);
     }
@@ -247,10 +368,37 @@ const DashboardLayout = () => {
               {isSidebarOpen && <span className="ml-3">Add Book</span>}
             </Link>
             
+            <Link to="/dashboard/bulk-upload" 
+              className={`flex items-center p-3 rounded-lg transition-colors ${isActive('/dashboard/bulk-upload') ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:bg-indigo-800'}`}>
+              <FaPlus className="h-5 w-5" />
+              {isSidebarOpen && <span className="ml-3">Bulk Upload</span>}
+            </Link>
+            
             <Link to="/dashboard/manage-books" 
               className={`flex items-center p-3 rounded-lg transition-colors ${isActive('/dashboard/manage-books') ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:bg-indigo-800'}`}>
               <MdOutlineManageHistory className="h-5 w-5" />
               {isSidebarOpen && <span className="ml-3">Manage Books</span>}
+            </Link>
+            
+            <Link to="/dashboard/manage-orders" 
+              className={`flex items-center p-3 rounded-lg transition-colors ${isActive('/dashboard/manage-orders') ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:bg-indigo-800'}`}>
+              <FaBoxOpen className="h-5 w-5" />
+              {isSidebarOpen && <span className="ml-3">Manage Orders</span>}
+            </Link>
+            
+            <Link to="/dashboard/manage-book-requests" 
+              className={`flex items-center p-3 rounded-lg transition-colors ${isActive('/dashboard/manage-book-requests') ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:bg-indigo-800'}`}>
+              <FaFileAlt className="h-5 w-5" />
+              {isSidebarOpen && (
+                <div className="ml-3 flex items-center">
+                  <span>Book Requests</span>
+                  {unreadRequestsData && unreadRequestsData.unreadCount > 0 && (
+                    <span className="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      {unreadRequestsData.unreadCount}
+                    </span>
+                  )}
+                </div>
+              )}
             </Link>
             
             <Link to="/dashboard/orders" 
@@ -301,10 +449,10 @@ const DashboardLayout = () => {
               />
               {searchQuery.length > 2 && (
                 <div className={`absolute top-full left-0 right-0 mt-1 rounded-lg shadow-lg z-10 max-h-96 overflow-auto ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                  {isSearching ? (
+                  {isSearching || apiSearchLoading || apiSearchFetching ? (
                     <div className="p-4 text-center">
-                      <div className="spinner"></div>
-                      <p>Searching...</p>
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                      <p className="mt-2 text-gray-500">Searching...</p>
                     </div>
                   ) : searchResults.length === 0 ? (
                     <p className="p-4 text-center text-gray-500">No results found</p>
@@ -313,18 +461,18 @@ const DashboardLayout = () => {
                       {searchResults.map((result, index) => (
                         <li key={index} className={`p-3 border-b ${isDarkMode ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'} cursor-pointer`}>
                           {result.type === 'book' && (
-                            <div className="flex items-center">
+                            <div className="flex items-center" onClick={() => navigate(`/books/${result.id}`)}>
                               <div className="mr-3 bg-blue-100 text-blue-600 p-2 rounded-full">
                                 <FaBook size={14} />
                               </div>
                               <div>
                                 <p className="font-medium">{result.title}</p>
-                                <p className="text-xs text-gray-500">Book #{result.id}</p>
+                                <p className="text-xs text-gray-500">by {result.author}</p>
                               </div>
                             </div>
                           )}
                           {result.type === 'user' && (
-                            <div className="flex items-center">
+                            <div className="flex items-center" onClick={() => navigate(`/dashboard/users/${result.id}`)}>
                               <div className="mr-3 bg-green-100 text-green-600 p-2 rounded-full">
                                 <FaUsers size={14} />
                               </div>
@@ -335,12 +483,12 @@ const DashboardLayout = () => {
                             </div>
                           )}
                           {result.type === 'order' && (
-                            <div className="flex items-center">
+                            <div className="flex items-center" onClick={() => navigate(`/dashboard/orders/${result.id}`)}>
                               <div className="mr-3 bg-amber-100 text-amber-600 p-2 rounded-full">
-                                <FaBook size={14} />
+                                <FaBoxOpen size={14} />
                               </div>
                               <div>
-                                <p className="font-medium">{result.id}</p>
+                                <p className="font-medium">Order #{result.id.substring(0, 8)}</p>
                                 <p className="text-xs text-gray-500">From {result.customer}</p>
                               </div>
                             </div>
@@ -386,13 +534,9 @@ const DashboardLayout = () => {
                       >
                         Clear all
                       </button>
-                      <button onClick={toggleNotifications} className="text-gray-500 hover:text-gray-700">
-                        <FiX size={18} />
-                      </button>
                     </div>
                   </div>
-                  
-                  <div className="max-h-96 overflow-auto">
+                  <div className={`max-h-96 overflow-y-auto ${isDarkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>
                     {notifications.length === 0 ? (
                       <div className="p-4 text-center text-gray-500">
                         <p>No notifications</p>
@@ -402,24 +546,42 @@ const DashboardLayout = () => {
                         {notifications.map(notification => (
                           <li 
                             key={notification.id} 
-                            className={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} ${notification.read ? '' : isDarkMode ? 'bg-gray-700' : 'bg-blue-50'}`}
                             onClick={() => markNotificationAsRead(notification.id)}
+                            className={`p-3 border-b ${
+                              isDarkMode 
+                                ? notification.read ? 'border-gray-700 bg-gray-800' : 'border-gray-700 bg-gray-700' 
+                                : notification.read ? 'border-gray-100 bg-white' : 'border-gray-100 bg-blue-50'
+                            } ${notification.action ? 'cursor-pointer hover:bg-opacity-90' : ''}`}
                           >
-                            <div className="flex items-start">
-                              <div className={`flex-shrink-0 rounded-full p-2 ${
-                                notification.type === 'order' ? 'bg-green-100 text-green-600' : 
-                                notification.type === 'user' ? 'bg-blue-100 text-blue-600' : 
-                                'bg-yellow-100 text-yellow-600'
-                              }`}>
-                                {notification.type === 'order' && <FaBook size={14} />}
-                                {notification.type === 'user' && <FaUsers size={14} />}
-                                {notification.type === 'system' && <FiBell size={14} />}
-                              </div>
-                              <div className="ml-3 flex-1">
-                                <p className={`text-sm ${notification.read ? 'font-normal' : 'font-semibold'}`}>
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                            <div 
+                              onClick={() => {
+                                if (notification.action) {
+                                  setIsNotificationsOpen(false);
+                                  navigate(notification.action);
+                                }
+                              }}
+                            >
+                              <div className="flex items-start">
+                                <div className={`mr-3 mt-1 p-2 rounded-full ${
+                                  notification.type === 'order' 
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : notification.type === 'book' 
+                                      ? 'bg-green-100 text-green-600'
+                                      : notification.type === 'book-request'
+                                        ? 'bg-amber-100 text-amber-600'
+                                        : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                  {notification.type === 'order' && <FaBoxOpen size={14} />}
+                                  {notification.type === 'book' && <FaBook size={14} />}
+                                  {notification.type === 'book-request' && <FaFileAlt size={14} />}
+                                  {notification.type !== 'order' && notification.type !== 'book' && notification.type !== 'book-request' && <FiBell size={14} />}
+                                </div>
+                                <div className="flex-1">
+                                  <p className={`text-sm ${notification.read ? 'font-normal' : 'font-medium'}`}>
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                                </div>
                               </div>
                             </div>
                           </li>

@@ -7,31 +7,11 @@ import { FaBook, FaShoppingCart, FaChartLine, FaUsers, FaDownload, FaFilter, FaC
 import { MdTrendingUp, MdRefresh } from 'react-icons/md';
 import RevenueChart from './RevenueChart';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux';
+import { useGetAllOrdersQuery } from '../../redux/features/orders/ordersApi';
+import { useFetchAllBooksQuery } from '../../redux/features/books/booksAPI';
 
-// Mock websocket connection for real-time updates
-const mockWebsocket = {
-  addEventListener: (event, callback) => {
-    if (event === 'message') {
-      // Mock a new order coming in every 30 seconds
-      const interval = setInterval(() => {
-        if (Math.random() > 0.7) {
-          callback({
-            data: JSON.stringify({
-              type: 'new_order',
-              data: {
-                id: `ORD-${Math.floor(2000 + Math.random() * 1000)}`,
-                customer: `Customer ${Math.floor(Math.random() * 20) + 1}`,
-                amount: (Math.random() * 200 + 50).toFixed(2),
-                date: new Date().toISOString()
-              }
-            })
-          });
-        }
-      }, 30000);
-      return () => clearInterval(interval);
-    }
-  }
-};
+// Removed mock websocket code
 
 const Dashboard = () => {
     const { isDarkMode } = useOutletContext() || { isDarkMode: false };
@@ -44,92 +24,186 @@ const Dashboard = () => {
         startDate: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0]
     });
-    const [orders, setOrders] = useState([]);
+    const [topCustomers, setTopCustomers] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
     const [filterStatus, setFilterStatus] = useState('all');
     const [isExporting, setIsExporting] = useState(false);
     const navigate = useNavigate();
-    const websocketRef = useRef(null);
-
-    // Handle websocket connections
+    
+    // Fetch orders using Redux query hook
+    const { data: ordersData, isLoading: ordersLoading, isError: ordersError, refetch: refetchOrders } = useGetAllOrdersQuery();
+    
+    // Fetch all books to get the total count
+    const { data: booksData, isLoading: booksLoading } = useFetchAllBooksQuery();
+    
+    // Debug data
     useEffect(() => {
-        // In a real app, establish websocket connection here
-        const messageHandler = (event) => {
-            const messageData = JSON.parse(event.data);
-            if (messageData.type === 'new_order') {
-                toast.info(`New order received: ${messageData.data.id}`);
-                setOrders(prevOrders => [messageData.data, ...prevOrders].slice(0, 5));
-                refreshData();
+        if (booksData) {
+            console.log("Total books count:", Array.isArray(booksData) ? booksData.length : "Books data not an array");
+        }
+    }, [booksData]);
+    
+    // Calculate dashboard statistics from orders
+    useEffect(() => {
+        if (ordersData) {
+            calculateDashboardStats(ordersData);
+        }
+    }, [ordersData, booksData]);
+    
+    // Calculate statistics based on order data
+    const calculateDashboardStats = (orders) => {
+        // Get total books from the books API response
+        const totalBooksCount = Array.isArray(booksData) ? booksData.length : 0;
+        
+        if (!orders || orders.length === 0) {
+            setData({
+                totalBooks: totalBooksCount,
+                totalSales: 0,
+                totalOrders: 0,
+                trendingBooks: Math.ceil(totalBooksCount * 0.1) // Estimate 10% as trending if no orders
+            });
+            setTopCustomers([]);
+            return;
+        }
+        
+        // Filter orders by date range if needed
+        let filteredOrders = orders;
+        if (dateRange === 'today') {
+            const today = new Date().toISOString().split('T')[0];
+            filteredOrders = orders.filter(order => 
+                new Date(order.createdAt).toISOString().split('T')[0] === today
+            );
+        } else if (dateRange === 'week') {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            filteredOrders = orders.filter(order => 
+                new Date(order.createdAt) >= weekAgo
+            );
+        } else if (dateRange === 'month') {
+            const monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            filteredOrders = orders.filter(order => 
+                new Date(order.createdAt) >= monthAgo
+            );
+        } else if (dateRange === 'custom') {
+            const startDate = new Date(customDateRange.startDate);
+            const endDate = new Date(customDateRange.endDate);
+            endDate.setHours(23, 59, 59, 999); // Include the entire end date
+            
+            filteredOrders = orders.filter(order => {
+                const orderDate = new Date(order.createdAt);
+                return orderDate >= startDate && orderDate <= endDate;
+            });
+        }
+        
+        // Calculate total sales
+        const totalSales = filteredOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+        
+        // Count total books sold in orders
+        const soldBooks = filteredOrders.reduce((sum, order) => {
+            // If order has products array with quantity
+            if (order.products && Array.isArray(order.products)) {
+                return sum + order.products.reduce((productsSum, product) => 
+                    productsSum + (parseInt(product.quantity) || 1), 0
+                );
             }
-        };
+            // If order has productIds array
+            else if (order.productIds && Array.isArray(order.productIds)) {
+                return sum + order.productIds.length;
+            }
+            // Fallback if no product data
+            return sum;
+        }, 0);
         
-        websocketRef.current = mockWebsocket;
-        const cleanup = websocketRef.current.addEventListener('message', messageHandler);
+        // Calculate top customers
+        const customerMap = {};
+        filteredOrders.forEach(order => {
+            const customerEmail = order.email;
+            if (!customerMap[customerEmail]) {
+                customerMap[customerEmail] = {
+                    name: order.name,
+                    email: customerEmail,
+                    orderCount: 0,
+                    totalSpent: 0
+                };
+            }
+            customerMap[customerEmail].orderCount++;
+            customerMap[customerEmail].totalSpent += (order.totalPrice || 0);
+        });
         
-        return () => {
-            if (cleanup) cleanup();
-        };
-    }, []);
+        const topCustomersList = Object.values(customerMap)
+            .sort((a, b) => b.totalSpent - a.totalSpent)
+            .slice(0, 5);
+        
+        // Find trending books
+        const productFrequency = {};
+        
+        // Count how many times each product appears in orders
+        filteredOrders.forEach(order => {
+            if (order.products && Array.isArray(order.products)) {
+                order.products.forEach(product => {
+                    const productId = product.id || product._id;
+                    if (productId) {
+                        productFrequency[productId] = (productFrequency[productId] || 0) + 1;
+                    }
+                });
+            } else if (order.productIds && Array.isArray(order.productIds)) {
+                order.productIds.forEach(productId => {
+                    if (productId) {
+                        productFrequency[productId] = (productFrequency[productId] || 0) + 1;
+                    }
+                });
+            }
+        });
+        
+        // Count products ordered more than once (trending)
+        const trendingBooksCount = Object.values(productFrequency).filter(count => count > 1).length;
+        
+        setData({
+            totalBooks: totalBooksCount,
+            soldBooks: soldBooks, 
+            totalSales: totalSales,
+            totalOrders: filteredOrders.length,
+            trendingBooks: trendingBooksCount || Math.ceil(totalBooksCount * 0.1) // Use 10% as fallback
+        });
+        
+        setTopCustomers(topCustomersList);
+    };
 
     // Fetch initial data
     useEffect(() => {
-        fetchData();
-    }, [dateRange, customDateRange]);
-
-    // Fetch data based on date range
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            // Construct query params based on date range
-            let queryParams = '';
-            if (dateRange === 'custom') {
-                queryParams = `startDate=${customDateRange.startDate}&endDate=${customDateRange.endDate}`;
-            } else {
-                queryParams = `range=${dateRange}`;
-            }
-            
-            const response = await axios.get(`${getBaseUrl()}/api/admin?${queryParams}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            setData(response.data);
-            setOrders(response.data.recentOrders || generateMockOrders());
-            setLoading(false);
-        } catch (error) {
-            console.error('Error:', error);
-            toast.error('Failed to fetch dashboard data');
+        if (ordersData) {
+            calculateDashboardStats(ordersData);
             setLoading(false);
         }
-    };
+    }, [dateRange, customDateRange, ordersData]);
 
     // Refresh data with animation
     const refreshData = async () => {
         setRefreshing(true);
         try {
-            await fetchData();
+            await refetchOrders();
             toast.success('Dashboard data refreshed');
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+            toast.error('Failed to refresh data');
         } finally {
             setTimeout(() => setRefreshing(false), 500);
         }
     };
 
-    // Generate mock orders for demo
-    const generateMockOrders = () => {
-        return Array(5).fill(0).map((_, index) => ({
-            id: `ORD-${2000 + index}`,
-            customer: `Customer ${index + 1}`,
-            date: new Date(new Date().setDate(new Date().getDate() - index)).toISOString(),
-            amount: (Math.random() * 200 + 50).toFixed(2),
-            status: ['Pending', 'Completed', 'Processing'][index % 3]
-        }));
-    };
-
     // Sort orders
     const sortedOrders = React.useMemo(() => {
-        let sortableOrders = [...orders];
+        if (!ordersData) return [];
+        
+        let sortableOrders = [...ordersData].map(order => ({
+            id: order._id,
+            customer: order.name,
+            date: order.createdAt || order.date,
+            amount: order.totalPrice || 0,
+            status: order.status || 'Pending'
+        }));
+        
         if (sortConfig.key) {
             sortableOrders.sort((a, b) => {
                 if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -142,7 +216,7 @@ const Dashboard = () => {
             });
         }
         return sortableOrders;
-    }, [orders, sortConfig]);
+    }, [ordersData, sortConfig]);
 
     // Request sort
     const requestSort = (key) => {
@@ -155,23 +229,27 @@ const Dashboard = () => {
 
     // Filter orders by status
     const filteredOrders = React.useMemo(() => {
-        if (filterStatus === 'all') return sortedOrders;
-        return sortedOrders.filter(order => order.status.toLowerCase() === filterStatus.toLowerCase());
+        if (filterStatus === 'all') return sortedOrders.slice(0, 10); // Show only 10 most recent orders
+        return sortedOrders
+            .filter(order => order.status.toLowerCase() === filterStatus.toLowerCase())
+            .slice(0, 10);
     }, [sortedOrders, filterStatus]);
 
     // Export data as CSV
     const exportData = async (format = 'csv') => {
+        if (!ordersData || ordersData.length === 0) {
+            toast.error('No data to export');
+            return;
+        }
+        
         setIsExporting(true);
         try {
-            // In a real app, call an API endpoint to get the formatted data
-            // For this example, we'll create a CSV string and download it
-            
             // Headers
             const headers = ['ID', 'Customer', 'Date', 'Amount', 'Status'];
             
             // Convert orders to CSV
-            const ordersData = orders.map(order => 
-                [order.id, order.customer, new Date(order.date).toLocaleDateString(), `Rs.${order.amount}`, order.status]
+            const ordersData = sortedOrders.map(order => 
+                [order.id, order.customer, new Date(order.date).toLocaleDateString(), `₹${order.amount}`, order.status]
             );
             
             // Combine headers and data
@@ -201,10 +279,11 @@ const Dashboard = () => {
         }
     };
 
-    if(loading) return <Loading/>;
+    if(loading || ordersLoading || booksLoading) return <Loading/>;
 
     const formattedNumbers = {
         totalBooks: data?.totalBooks?.toLocaleString() || '0',
+        soldBooks: data?.soldBooks?.toLocaleString() || '0',
         totalSales: data?.totalSales?.toLocaleString() || '0',
         trendingBooks: data?.trendingBooks?.toLocaleString() || '0',
         totalOrders: data?.totalOrders?.toLocaleString() || '0'
@@ -319,6 +398,9 @@ const Dashboard = () => {
                         <div>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} font-medium`}>Total Books</p>
                             <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{formattedNumbers.totalBooks}</h3>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {formattedNumbers.soldBooks} sold
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -330,7 +412,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} font-medium`}>Total Sales</p>
-                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Rs.{formattedNumbers.totalSales}</h3>
+                            <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>₹{formattedNumbers.totalSales}</h3>
                         </div>
                     </div>
                 </div>
@@ -343,6 +425,9 @@ const Dashboard = () => {
                         <div>
                             <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} font-medium`}>Trending Books</p>
                             <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{formattedNumbers.trendingBooks}</h3>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Popular items
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -364,48 +449,45 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Revenue Chart */}
                 <div className="lg:col-span-2">
-                    <RevenueChart />
+                    <RevenueChart orderData={ordersData || []} />
                 </div>
                 
                 {/* Top Customers */}
                 <div className={`rounded-lg shadow-md ${isDarkMode ? 'bg-gray-700' : 'bg-white'}`}>
                     <div className={`p-4 border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} flex justify-between items-center`}>
                         <h2 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Top Customers</h2>
-                        <select className={`text-sm border rounded ${
-                            isDarkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'border-gray-300 text-gray-700'
-                        }`}>
-                            <option>This Month</option>
-                            <option>Last Month</option>
-                            <option>This Year</option>
-                        </select>
                     </div>
                     <div className="overflow-y-auto max-h-80">
-                        <ul className={`divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
-                            {[1, 2, 3, 4, 5].map((item) => (
-                                <li key={item} className={`p-4 ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-50'}`}>
-                                    <div className="flex items-center">
-                                        <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 mr-3">
-                                            <img 
-                                                src={`https://randomuser.me/api/portraits/${item % 2 === 0 ? 'women' : 'men'}/${70 + item}.jpg`} 
-                                                alt="Customer" 
-                                                className="h-full w-full rounded-full object-cover"
-                                            />
+                        {topCustomers.length > 0 ? (
+                            <ul className={`divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
+                                {topCustomers.map((customer, index) => (
+                                    <li key={index} className={`p-4 ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-50'}`}>
+                                        <div className="flex items-center">
+                                            <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 mr-3 flex items-center justify-center">
+                                                <span className="text-xl font-bold text-gray-700">
+                                                    {customer.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} truncate`}>
+                                                    {customer.name}
+                                                </p>
+                                                <p className="text-sm text-gray-500 truncate">
+                                                    {customer.orderCount} {customer.orderCount === 1 ? 'order' : 'orders'}
+                                                </p>
+                                            </div>
+                                            <div className={`inline-flex items-center text-base font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                                                ₹{customer.totalSpent.toFixed(2)}
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} truncate`}>
-                                                Customer {item}
-                                            </p>
-                                            <p className="text-sm text-gray-500 truncate">
-                                                {item} orders
-                                            </p>
-                                        </div>
-                                        <div className={`inline-flex items-center text-base font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                                            Rs.{(item * 100).toFixed(2)}
-                                        </div>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className="p-4 text-center text-gray-500">
+                                No customer data available
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -420,10 +502,10 @@ const Dashboard = () => {
                                 className={`flex items-center px-3 py-1.5 text-sm rounded-lg ${
                                     isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-100 hover:bg-gray-200'
                                 }`}
-                                onClick={() => setFilterStatus(prev => prev === 'all' ? 'completed' : 'all')}
+                                onClick={() => setFilterStatus(prev => prev === 'all' ? 'Pending' : 'all')}
                             >
                                 <FaFilter className="mr-2" />
-                                {filterStatus === 'all' ? 'All Status' : `${filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}`}
+                                {filterStatus === 'all' ? 'All Status' : `${filterStatus}`}
                             </button>
                         </div>
                         <button 
@@ -438,71 +520,81 @@ const Dashboard = () => {
                         </button>
                     </div>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
-                        <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
-                            <tr>
-                                <th 
-                                    onClick={() => requestSort('id')}
-                                    className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
-                                >
-                                    Order ID
-                                </th>
-                                <th 
-                                    onClick={() => requestSort('customer')}
-                                    className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
-                                >
-                                    Customer
-                                </th>
-                                <th 
-                                    onClick={() => requestSort('date')}
-                                    className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
-                                >
-                                    Date
-                                </th>
-                                <th 
-                                    onClick={() => requestSort('amount')}
-                                    className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
-                                >
-                                    Amount
-                                </th>
-                                <th 
-                                    onClick={() => requestSort('status')}
-                                    className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
-                                >
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className={`${isDarkMode ? 'bg-gray-700 divide-y divide-gray-600' : 'bg-white divide-y divide-gray-200'}`}>
-                            {filteredOrders.map((order) => (
-                                <tr key={order.id} className={isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-50'}>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        {order.id}
-                                    </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                        {order.customer}
-                                    </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                        {new Date(order.date).toLocaleDateString()}
-                                    </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-                                        Rs.{order.amount}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                            order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                            order.status === 'Completed' ? 'bg-green-100 text-green-800' : 
-                                            'bg-blue-100 text-blue-800'
-                                        }`}>
-                                            {order.status}
-                                        </span>
-                                    </td>
+                
+                {filteredOrders.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className={`min-w-full divide-y ${isDarkMode ? 'divide-gray-600' : 'divide-gray-200'}`}>
+                            <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
+                                <tr>
+                                    <th 
+                                        onClick={() => requestSort('id')}
+                                        className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
+                                    >
+                                        Order ID
+                                    </th>
+                                    <th 
+                                        onClick={() => requestSort('customer')}
+                                        className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
+                                    >
+                                        Customer
+                                    </th>
+                                    <th 
+                                        onClick={() => requestSort('date')}
+                                        className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
+                                    >
+                                        Date
+                                    </th>
+                                    <th 
+                                        onClick={() => requestSort('amount')}
+                                        className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
+                                    >
+                                        Amount
+                                    </th>
+                                    <th 
+                                        onClick={() => requestSort('status')}
+                                        className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider cursor-pointer`}
+                                    >
+                                        Status
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className={`${isDarkMode ? 'bg-gray-700 divide-y divide-gray-600' : 'bg-white divide-y divide-gray-200'}`}>
+                                {filteredOrders.map((order) => (
+                                    <tr key={order.id} className={isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-50'}>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                            {order.id.substring(0, 10)}...
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                            {order.customer}
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                            {new Date(order.date).toLocaleDateString()}
+                                        </td>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                                            ₹{order.amount.toFixed(2)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                                order.status === 'Delivered' ? 'bg-green-100 text-green-800' : 
+                                                order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                                                order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-800' :
+                                                order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                                'bg-gray-100 text-gray-800'
+                                            }`}>
+                                                {order.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div className="p-8 text-center text-gray-500">
+                        No orders found
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -148,7 +148,10 @@ const CheckoutPage = () => {
             })),
             totalPrice: numericTotalPrice,
             orderDate: new Date().toISOString(),
-            status: "pending"
+            status: "pending",
+            paymentMethod: data.paymentMethod || "Cash on Delivery",
+            shippingMethod: data.shippingMethod || "Standard",
+            specialInstructions: data.specialInstructions || ""
         }
         
         try {
@@ -340,6 +343,55 @@ const CheckoutPage = () => {
                         />
                       </div>
     
+                      {/* Payment Method */}
+                      <div className="md:col-span-3">
+                        <label htmlFor="paymentMethod" className="block text-gray-700 font-medium mb-2">
+                          Payment Method
+                        </label>
+                        <select
+                          id="paymentMethod"
+                          className={`h-10 border ${errors.paymentMethod ? "border-red-500" : "border-gray-300"} rounded px-4 w-full text-sm focus:outline-none focus:border-blue-500`}
+                          {...register("paymentMethod", { required: "Payment method is required" })}
+                        >
+                          <option value="Cash on Delivery">Cash on Delivery</option>
+                          <option value="Credit Card">Credit Card</option>
+                          <option value="Debit Card">Debit Card</option>
+                          <option value="PayPal">PayPal</option>
+                        </select>
+                        {errors.paymentMethod && <p className="text-red-500 text-xs mt-1">{errors.paymentMethod.message}</p>}
+                      </div>
+
+                      {/* Shipping Method */}
+                      <div className="md:col-span-2">
+                        <label htmlFor="shippingMethod" className="block text-gray-700 font-medium mb-2">
+                          Shipping Method
+                        </label>
+                        <select
+                          id="shippingMethod"
+                          className={`h-10 border ${errors.shippingMethod ? "border-red-500" : "border-gray-300"} rounded px-4 w-full text-sm focus:outline-none focus:border-blue-500`}
+                          {...register("shippingMethod", { required: "Shipping method is required" })}
+                        >
+                          <option value="Standard">Standard (3-5 days)</option>
+                          <option value="Express">Express (1-2 days)</option>
+                          <option value="Overnight">Overnight</option>
+                        </select>
+                        {errors.shippingMethod && <p className="text-red-500 text-xs mt-1">{errors.shippingMethod.message}</p>}
+                      </div>
+
+                      {/* Special Instructions */}
+                      <div className="md:col-span-5">
+                        <label htmlFor="specialInstructions" className="block text-gray-700 font-medium mb-2">
+                          Special Instructions (Optional)
+                        </label>
+                        <textarea
+                          id="specialInstructions"
+                          rows="3"
+                          className="border border-gray-300 rounded px-4 py-2 w-full text-sm focus:outline-none focus:border-blue-500"
+                          placeholder="Add any special instructions for delivery"
+                          {...register("specialInstructions")}
+                        ></textarea>
+                      </div>
+    
                       {/* Terms Agreement */}
                       <div className="md:col-span-5 mt-2">
                         <label className="flex items-center space-x-3">
@@ -398,7 +450,25 @@ const InputField = ({ label, id, register, required, pattern, error, type = 'tex
     />
     {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
   </div>
-);                                          
-                                                
+);
+
+const renderOrderStatus = (status) => {
+  const statusConfig = {
+    'Delivered': { bgColor: 'bg-green-100', textColor: 'text-green-700', icon: '✓' },
+    'Shipped': { bgColor: 'bg-blue-100', textColor: 'text-blue-700', icon: '🚚' },
+    'Processing': { bgColor: 'bg-yellow-100', textColor: 'text-yellow-700', icon: '⚙️' },
+    'Pending': { bgColor: 'bg-orange-100', textColor: 'text-orange-700', icon: '⏳' },
+    'Cancelled': { bgColor: 'bg-red-100', textColor: 'text-red-700', icon: '✕' }
+  };
+  
+  const config = statusConfig[status] || statusConfig['Pending'];
+  
+  return (
+    <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${config.bgColor} ${config.textColor}`}>
+      <span>{config.icon}</span>
+      <span>{status || 'Pending'}</span>
+    </span>
+  );
+};
 
 export default CheckoutPage;

@@ -13,14 +13,26 @@ import CartPage from "../pages/books/CartPage";
 import CheckoutPage from "../pages/books/CheckoutPage"
 import UserDashboard from "../components/User-Dashboard";
 import UpdateProfile from "../components/UpdateProfile";
+import UserSettings from "../components/UserSettings";
+import WishList from "../components/WishList";
 import SingleBook from "../pages/books/singleBook";
 import OrdersPage from "../pages/books/orderPage";
+
+import NewArrival from "../pages/SecondaryNavigationPage/NewArrival";
+import BestSellers from "../pages/SecondaryNavigationPage/BestSellers";
+import AwardWinners from "../pages/SecondaryNavigationPage/AwardWinners";
+import RequestBook from "../pages/SecondaryNavigationPage/RequestBook";
+
 import AdminRoute from "./AdminRoute";
 import AdminLogin from "../components/AdminLogin"
 import DashboardLayout from "../pages/dashboard/DashboardLayout";
 import Dashboard from "../pages/dashboard/Dashboard";
-
-
+import ManageBooks from "../pages/dashboard/manageBooks/ManageBooks";
+import AddBook from "../pages/dashboard/addBook/AddBook";
+import UpdateBook from "../pages/dashboard/EditBook/UpdateBook";
+import ManageOrders from "../pages/dashboard/manageOrders/ManageOrders";
+import ManageBookRequests from "../pages/dashboard/manageBooks/ManageBookRequests";
+import BulkBookUpload from "../pages/dashboard/bulkUpload/BulkBookUpload";
 
 // Error boundary component
 const ErrorBoundary = () => {
@@ -85,6 +97,18 @@ const router = createBrowserRouter([
         )
       },
       {
+        path: "/settings",
+        element: (
+          <ProtectedRoute>
+            <UserSettings />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: "/wishlist",
+        element: <WishList />
+      },
+      {
         path: "/update-profile",
         element: <UpdateProfile />
       },
@@ -92,7 +116,22 @@ const router = createBrowserRouter([
         path: "/books/:id",
         element: <SingleBook />
       },
-      
+      {
+        path: "/new-arrivals",
+        element: <NewArrival />
+      },
+      {
+        path: "/best-sellers",
+        element: <BestSellers />
+      },
+      {
+        path: "/award-winners",
+        element: <AwardWinners />
+      },
+      {
+        path: "/request-book",
+        element: <RequestBook />
+      }
     ]
   },
   {
@@ -110,16 +149,27 @@ const router = createBrowserRouter([
       },
       {
         path: "add-new-book",
-        element: <AdminRoute><div>Add New Book</div></AdminRoute>
+        element: <AdminRoute><AddBook /></AdminRoute>
+      },
+      {
+        path: "bulk-upload",
+        element: <AdminRoute><BulkBookUpload /></AdminRoute>
       },
       {
         path: "edit-book/:id",
-        element: <AdminRoute><div>Edit Book</div></AdminRoute>
+        element: <AdminRoute><UpdateBook /></AdminRoute>
       },
       {
         path: "manage-books",
-        element: <AdminRoute><div>Manage Book</div></AdminRoute  >
-        
+        element: <AdminRoute><ManageBooks /></AdminRoute  >
+      },
+      {
+        path: "manage-orders",
+        element: <AdminRoute><ManageOrders /></AdminRoute>
+      },
+      {
+        path: "manage-book-requests",
+        element: <AdminRoute><ManageBookRequests /></AdminRoute>
       }
     ]
   }

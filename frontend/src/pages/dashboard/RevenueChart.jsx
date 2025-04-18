@@ -1,47 +1,178 @@
-import React from 'react';
-import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
+import React, { useState, useEffect } from 'react';
+import { 
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
+import { useOutletContext } from 'react-router-dom';
 
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
-const RevenueChart = () => {
-  const revenueData = [500, 700, 800, 600, 750, 900, 650, 870, 960, 1020, 1100, 1150];
-  const previousYearData = [400, 600, 650, 550, 700, 850, 600, 800, 900, 950, 1000, 1050];
+const RevenueChart = ({ orderData = [] }) => {
+  const { isDarkMode } = useOutletContext() || { isDarkMode: false };
+  const [chartType, setChartType] = useState('line');
+  const [timeRange, setTimeRange] = useState('month');
+  const [chartData, setChartData] = useState(null);
 
-  const data = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        label: 'Current Year',
-        data: revenueData,
-        borderColor: 'rgba(99, 102, 241, 1)',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-      },
-      {
-        label: 'Previous Year',
-        data: previousYearData,
-        borderColor: 'rgba(249, 115, 22, 1)',
-        backgroundColor: 'rgba(249, 115, 22, 0.05)',
-        borderDash: [5, 5],
-        fill: false,
-        tension: 0.4,
-        pointBackgroundColor: 'rgba(249, 115, 22, 1)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+  useEffect(() => {
+    if (orderData && orderData.length > 0) {
+      generateChartData();
+    } else {
+      // Generate sample data if no orders
+      generateSampleData();
+    }
+  }, [orderData, timeRange, chartType, isDarkMode]);
+
+  const generateChartData = () => {
+    // Create date labels and data points based on time range
+    let labels = [];
+    let dataPoints = [];
+    
+    // Set up date ranges
+    const currentDate = new Date();
+    let startDate;
+    
+    if (timeRange === 'week') {
+      // Past 7 days
+      startDate = new Date();
+      startDate.setDate(currentDate.getDate() - 6);
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        labels.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
+        dataPoints.push(0); // Initialize with zeros
       }
-    ],
+    } else if (timeRange === 'month') {
+      // Past 30 days in weekly segments
+      startDate = new Date();
+      startDate.setDate(currentDate.getDate() - 29);
+      
+      for (let i = 0; i < 5; i++) {
+        const weekStart = new Date(startDate);
+        weekStart.setDate(startDate.getDate() + (i * 7));
+        labels.push(`Week ${i+1}`);
+        dataPoints.push(0); // Initialize with zeros
+      }
+    } else if (timeRange === 'year') {
+      // Past 12 months
+      startDate = new Date();
+      startDate.setMonth(currentDate.getMonth() - 11);
+      
+      for (let i = 0; i < 12; i++) {
+        const month = new Date(startDate);
+        month.setMonth(startDate.getMonth() + i);
+        labels.push(month.toLocaleDateString('en-US', { month: 'short' }));
+        dataPoints.push(0); // Initialize with zeros
+      }
+    }
+    
+    // Parse order data to fill in the data points
+    orderData.forEach(order => {
+      const orderDate = new Date(order.createdAt || order.date);
+      const orderAmount = order.totalPrice || 0;
+      
+      if (timeRange === 'week') {
+        // Only consider orders in the past 7 days
+        if (orderDate >= startDate && orderDate <= currentDate) {
+          const dayIndex = Math.floor((orderDate - startDate) / (1000 * 60 * 60 * 24));
+          if (dayIndex >= 0 && dayIndex < 7) {
+            dataPoints[dayIndex] += orderAmount;
+          }
+        }
+      } else if (timeRange === 'month') {
+        // Only consider orders in the past 30 days
+        if (orderDate >= startDate && orderDate <= currentDate) {
+          const dayDiff = Math.floor((orderDate - startDate) / (1000 * 60 * 60 * 24));
+          const weekIndex = Math.min(Math.floor(dayDiff / 7), 4);
+          if (weekIndex >= 0 && weekIndex < 5) {
+            dataPoints[weekIndex] += orderAmount;
+          }
+        }
+      } else if (timeRange === 'year') {
+        // Only consider orders in the past 12 months
+        if (orderDate >= startDate && orderDate <= currentDate) {
+          const monthIndex = (orderDate.getMonth() - startDate.getMonth() + 12) % 12;
+          if (monthIndex >= 0 && monthIndex < 12) {
+            dataPoints[monthIndex] += orderAmount;
+          }
+        }
+      }
+    });
+    
+    setChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Revenue',
+          data: dataPoints,
+          borderColor: '#3b82f6',
+          backgroundColor: chartType === 'bar' 
+            ? 'rgba(59, 130, 246, 0.6)' 
+            : 'rgba(59, 130, 246, 0.1)',
+          fill: true,
+          tension: 0.4,
+        }
+      ]
+    });
   };
 
+  // Generate sample data if no real data
+  const generateSampleData = () => {
+    let labels = [];
+    let data = [];
+    
+    if (timeRange === 'week') {
+      labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      data = [18500, 25800, 20400, 24100, 27800, 32000, 29600];
+    } else if (timeRange === 'month') {
+      labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'];
+      data = [98000, 120000, 85000, 93000, 105000];
+    } else {
+      labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      data = [
+        250000, 290000, 310000, 360000, 330000, 380000,
+        420000, 450000, 400000, 500000, 580000, 650000
+      ];
+    }
+    
+    setChartData({
+      labels,
+      datasets: [
+        {
+          label: 'Revenue',
+          data,
+          borderColor: '#3b82f6',
+          backgroundColor: chartType === 'bar' 
+            ? 'rgba(59, 130, 246, 0.6)' 
+            : 'rgba(59, 130, 246, 0.1)',
+          fill: true,
+          tension: 0.4,
+        }
+      ]
+    });
+  };
+
+  // Chart options
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -49,56 +180,46 @@ const RevenueChart = () => {
       legend: {
         position: 'top',
         labels: {
-          usePointStyle: true,
-          boxWidth: 6,
+          color: isDarkMode ? '#e5e7eb' : '#1f2937',
           font: {
-            size: 12,
             weight: 'bold'
           }
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(17, 24, 39, 0.9)',
-        titleFont: {
-          size: 14,
-          weight: 'bold'
-        },
-        bodyFont: {
-          size: 13
-        },
+        backgroundColor: isDarkMode ? '#374151' : 'white',
+        titleColor: isDarkMode ? 'white' : '#111827',
+        bodyColor: isDarkMode ? '#e5e7eb' : '#4b5563',
+        borderColor: isDarkMode ? '#4b5563' : '#e5e7eb',
+        borderWidth: 1,
         padding: 12,
-        cornerRadius: 8,
-        displayColors: false,
+        boxPadding: 8,
+        usePointStyle: true,
         callbacks: {
           label: function(context) {
-            return `Revenue: Rs.${context.parsed.y}`;
+            return `Revenue: ₹${context.raw.toLocaleString()}`;
           }
         }
       }
     },
     scales: {
-      y: {
-        beginAtZero: true,
+      x: {
         grid: {
-          color: 'rgba(156, 163, 175, 0.1)',
+          display: false,
           drawBorder: false,
         },
         ticks: {
-          callback: function(value) {
-            return 'Rs.' + value;
-          },
-          font: {
-            size: 11
-          }
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
         }
       },
-      x: {
+      y: {
         grid: {
-          display: false
+          color: isDarkMode ? 'rgba(156, 163, 175, 0.1)' : 'rgba(107, 114, 128, 0.1)',
         },
         ticks: {
-          font: {
-            size: 11
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
+          callback: function(value) {
+            return '₹' + value.toLocaleString();
           }
         }
       }
@@ -106,45 +227,46 @@ const RevenueChart = () => {
   };
 
   return (
-    <div className="w-full bg-white shadow-md rounded-xl overflow-hidden">
-      <div className="p-5 border-b border-gray-100">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-800">Revenue Overview</h2>
-          <div className="flex items-center space-x-2">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M12 7a1 1 0 10-2 0v4a1 1 0 102 0V7z" clipRule="evenodd" />
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
-              </svg>
-              +8.2% from last year
-            </span>
-          </div>
+    <div className={`rounded-lg shadow-md ${isDarkMode ? 'bg-gray-700' : 'bg-white'} p-4 h-full`}>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Revenue Overview</h2>
+        <div className="flex space-x-2">
+          <select 
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+            className={`text-sm px-2.5 py-1.5 rounded-md border ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-600 text-gray-200' 
+                : 'border-gray-300 text-gray-700'
+            }`}
+          >
+            <option value="week">Last 7 days</option>
+            <option value="month">Last 30 days</option>
+            <option value="year">Last 12 months</option>
+          </select>
+          <select 
+            value={chartType}
+            onChange={(e) => setChartType(e.target.value)}
+            className={`text-sm px-2.5 py-1.5 rounded-md border ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-600 text-gray-200' 
+                : 'border-gray-300 text-gray-700'
+            }`}
+          >
+            <option value="line">Line Chart</option>
+            <option value="bar">Bar Chart</option>
+          </select>
         </div>
       </div>
-      <div className="p-5">
-        <div className="hidden md:block h-80">
-          <Line data={data} options={options} />
-        </div>
-        <div className="md:hidden flex flex-col items-center justify-center p-6 text-center">
-          <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          <p className="text-gray-600">Chart available on larger screens</p>
-        </div>
-        <div className="grid grid-cols-3 gap-4 mt-6">
-          <div className="bg-indigo-50 rounded-lg p-3 text-center">
-            <p className="text-xs text-indigo-600 font-medium">Total Revenue</p>
-            <p className="text-lg font-bold text-indigo-800">Rs.9,005</p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-3 text-center">
-            <p className="text-xs text-green-600 font-medium">Average</p>
-            <p className="text-lg font-bold text-green-800">Rs.750</p>
-          </div>
-          <div className="bg-amber-50 rounded-lg p-3 text-center">
-            <p className="text-xs text-amber-600 font-medium">Growth</p>
-            <p className="text-lg font-bold text-amber-800">+12.5%</p>
-          </div>
-        </div>
+
+      <div className="h-80">
+        {chartData && (
+          chartType === 'line' ? (
+            <Line data={chartData} options={options} />
+          ) : (
+            <Bar data={chartData} options={options} />
+          )
+        )}
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import { FiTrash2 } from "react-icons/fi";
 import Swal from "sweetalert2";
 
 import { useAuth } from "../../context/AuthContext";
-
+import { getImgUrl } from "../../utils/getImgUrl";
 
 import { Link } from "react-router-dom";
 import {
@@ -18,23 +18,9 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-// Dynamic image import (like in BookCard)
-const bookImages = import.meta.glob("../../assets/*.{png,jpg,jpeg,webp}");
-
-const importBookImage = async (imageName) => {
-  const path = `../../assets/${imageName}`;
-  if (bookImages[path]) {
-    const image = await bookImages[path]();
-    return image.default;
-  }
-  return "";
-};
-
 const Cart = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const dispatch = useDispatch();
-  const [images, setImages] = useState({});
-
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -82,21 +68,8 @@ const Cart = () => {
     });
   };
 
-  useEffect(() => {
-    const loadImages = async () => {
-      const imgMap = {};
-      for (let item of cartItems) {
-        imgMap[item.id] = await importBookImage(item.coverImage);
-      }
-      setImages(imgMap);
-    };
-    loadImages();
-  }, [cartItems]);
-
   const { loading } = useAuth();
-
   const user = useSelector(state => state.auth.user);
-
 
   const handleCheckout = () => {
     if (loading) return; // Wait until auth state is resolved
@@ -133,7 +106,6 @@ const Cart = () => {
   
   if (loading) return <p className="text-center py-20">Checking your login status...</p>;
 
-
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h2 className="text-4xl font-bold text-gray-900 mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
@@ -162,17 +134,15 @@ const Cart = () => {
                 className="flex items-center justify-between bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 group"
               >
                 <div className="flex items-center gap-6">
-                  {images[item.id] ? (
-                    <img
-                      src={images[item.id]}
-                      alt={item.title}
-                      className="w-24 h-32 object-cover rounded-lg shadow-sm border-2 border-gray-100"
-                    />
-                  ) : (
-                    <div className="w-24 h-32 bg-gray-100 animate-pulse rounded-lg flex items-center justify-center text-gray-400">
-                      <span className="text-xs">Loading</span>
-                    </div>
-                  )}
+                  <img
+                    src={getImgUrl(item.coverImage)}
+                    alt={item.title}
+                    className="w-24 h-32 object-cover rounded-lg shadow-sm border-2 border-gray-100"
+                    onError={(e) => {
+                      console.log("Image load error in cart, using fallback");
+                      e.target.src = getImgUrl('default-book-cover.jpg');
+                    }}
+                  />
 
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-gray-900">
