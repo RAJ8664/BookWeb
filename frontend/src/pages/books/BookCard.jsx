@@ -64,24 +64,6 @@ const BookCard = ({ book }) => {
   };
 
   const toggleWishlist = () => {
-    // Check if user is logged in
-    if (!user) {
-      Swal.fire({
-        title: 'Login Required',
-        text: 'Please login to add items to your wishlist',
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: 'Login',
-        cancelButtonText: 'Cancel',
-        confirmButtonColor: '#3085d6',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          navigate('/login');
-        }
-      });
-      return;
-    }
-
     // Toggle wishlist state using Redux
     if (isInWishlist) {
       dispatch(removeFromWishlist(book.id));

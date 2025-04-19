@@ -3,7 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useForm } from "react-hook-form"
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { clearCart } from '../../redux/features/cart/cartSlice';
+import { clearCart, updateCartItem } from '../../redux/features/cart/cartSlice';
+import { useFetchAllBooksQuery } from '../../redux/features/books/booksAPI';
 
 import Swal from 'sweetalert2';
 import { useCreateOrderMutation } from '../../redux/features/orders/ordersApi';
@@ -11,6 +12,31 @@ import { useCreateOrderMutation } from '../../redux/features/orders/ordersApi';
 const CheckoutPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { user, loading } = useAuth();
+    
+    // Fetch latest book data to ensure prices are up-to-date
+    const { data: latestBooks, isLoading: booksLoading } = useFetchAllBooksQuery();
+    
+    // Update cart items with latest book data
+    useEffect(() => {
+        if (latestBooks && cartItems.length > 0) {
+            cartItems.forEach(cartItem => {
+                // Find matching book in latest data
+                const updatedBook = latestBooks.find(book => book._id === cartItem._id);
+                if (updatedBook && updatedBook.price !== cartItem.price) {
+                    // Silently update cart item with latest price
+                    dispatch(updateCartItem({
+                        _id: cartItem._id,
+                        price: updatedBook.price,
+                        // Keep other properties
+                        quantity: cartItem.quantity
+                    }));
+                }
+            });
+        }
+    }, [latestBooks, cartItems, dispatch]);
+    
     const totalPrice = cartItems.length > 0 
         ? cartItems.reduce((acc, item) => {
             const price = item.newPrice || item.price || 0;
@@ -19,8 +45,17 @@ const CheckoutPage = () => {
           }, 0).toFixed(2)
         : "0.00";
     
-    const { user, loading } = useAuth();
-    const navigate = useNavigate();
+    // Load saved address from localStorage
+    const [savedAddress, setSavedAddress] = useState(null);
+    
+    useEffect(() => {
+        if (user?.email) {
+            const storedAddress = localStorage.getItem(`address_${user.email}`);
+            if (storedAddress) {
+                setSavedAddress(JSON.parse(storedAddress));
+            }
+        }
+    }, [user]);
     
     // Redirect if cart is empty
     useEffect(() => {
@@ -59,8 +94,11 @@ const CheckoutPage = () => {
         }
     }, [user, loading, navigate]);
     
+    // Combine loading states
+    const isPageLoading = loading || booksLoading;
+    
     // If still loading, show loading
-    if (loading) {
+    if (isPageLoading) {
         return <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -105,12 +143,31 @@ const CheckoutPage = () => {
         register,
         handleSubmit,
         formState: { errors },
+        setValue
     } = useForm({
         defaultValues: {
             name: user?.displayName || "",
             email: user?.email || "",
+            address: savedAddress?.street || "",
+            city: savedAddress?.city || "",
+            state: savedAddress?.state || "",
+            country: savedAddress?.country || "",
+            zipcode: savedAddress?.zipcode || "",
+            phone: savedAddress?.phone || ""
         }
     });
+    
+    // Set saved address values when they are loaded
+    useEffect(() => {
+        if (savedAddress) {
+            setValue('address', savedAddress.street || '');
+            setValue('city', savedAddress.city || '');
+            setValue('state', savedAddress.state || '');
+            setValue('country', savedAddress.country || '');
+            setValue('zipcode', savedAddress.zipcode || '');
+            setValue('phone', savedAddress.phone || '');
+        }
+    }, [savedAddress, setValue]);
 
     const [createOrder, {isLoading, error}] = useCreateOrderMutation();
     const [isChecked, setIsChecked] = useState(false);
@@ -228,6 +285,16 @@ const CheckoutPage = () => {
                       <h3 className="text-xl font-semibold text-gray-800">Personal Details</h3>
                       <p className="text-gray-500 text-sm">Please fill out all the fields.</p>
                     </div>
+                    
+                    {/* Saved Address Notice */}
+                    {savedAddress && (
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                        <p className="font-medium text-green-700">Address Loaded</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          Your saved delivery address has been applied
+                        </p>
+                      </div>
+                    )}
                     
                     {/* Payment Notice */}
                     <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">

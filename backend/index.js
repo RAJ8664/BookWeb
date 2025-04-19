@@ -4,7 +4,10 @@ const cors = require("cors");
 
 const mongoose = require("mongoose");
 const port = process.env.PORT || 5000;
-require('dotenv').config()
+
+// Load environment variables from .env.local, then fall back to .env
+require('dotenv').config({ path: '.env.local' });  
+require('dotenv').config(); // This will not overwrite existing env vars
 
 // Validate critical environment variables
 const requiredEnvVars = ['DB_URL', 'JWT_SECRET_KEY', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
@@ -71,7 +74,7 @@ async function main() {
     app.listen(port, () => {
       console.log(`Server listening on port ${port}`);
       console.log(`Server environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`Cloudinary configured for cloud: ${process.env.CLOUDINARY_CLOUD_NAME}`);
+      console.log(`Cloudinary configured successfully`);
     });
   } catch (err) {
     console.error("MongoDB connection error:", err);

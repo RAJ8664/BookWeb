@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaEnvelope, FaPhone, FaMapMarker } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -27,6 +28,11 @@ const Footer = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const navigateTo = (path) => {
+    navigate(path);
+    window.scrollTo(0, 0);
   };
 
   const currentYear = new Date().getFullYear();
@@ -62,16 +68,12 @@ const Footer = () => {
             Discover worlds between pages.
           </p>
           <div className="flex items-center space-x-2 text-sm text-gray-400">
-            <FaMapMarker className="text-blue-400" />
-            <span>123 Book Street, Reading City</span>
-          </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-400">
             <FaPhone className="text-blue-400" />
-            <span>+1 (555) 123-4567</span>
+            <span>+977-9807704850</span>
           </div>
           <div className="flex items-center space-x-2 text-sm text-gray-400">
             <FaEnvelope className="text-blue-400" />
-            <span>contact@bookweb.com</span>
+            <span>bishalroy909@gmail.com</span>
           </div>
         </div>
 
@@ -81,9 +83,12 @@ const Footer = () => {
           <ul className="space-y-3 grid grid-cols-2">
             {quickLinks.map((link, idx) => (
               <li key={idx} className="col-span-1">
-                <Link to={link.path} className="hover:text-blue-400 transition duration-300">
+                <button 
+                  onClick={() => navigateTo(link.path)} 
+                  className="hover:text-blue-400 transition duration-300 text-left cursor-pointer"
+                >
                   {link.name}
-                </Link>
+                </button>
               </li>
             ))}
           </ul>
@@ -143,9 +148,9 @@ const Footer = () => {
       <div className="border-t border-gray-800 mt-8 py-6 text-center text-sm text-gray-400">
         <p>&copy; {currentYear} BookWeb. All Rights Reserved.</p>
         <div className="flex justify-center space-x-4 text-xs mt-2">
-          <Link to="/privacy" className="hover:text-blue-400 transition duration-300">Privacy Policy</Link>
-          <Link to="/terms" className="hover:text-purple-400 transition duration-300">Terms of Service</Link>
-          <Link to="/faq" className="hover:text-green-400 transition duration-300">FAQ</Link>
+          <button onClick={() => navigateTo('/privacy')} className="hover:text-blue-400 transition duration-300">Privacy Policy</button>
+          <button onClick={() => navigateTo('/terms')} className="hover:text-purple-400 transition duration-300">Terms of Service</button>
+          <button onClick={() => navigateTo('/faq')} className="hover:text-green-400 transition duration-300">FAQ</button>
         </div>
       </div>
     </footer>

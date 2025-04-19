@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from "../context/AuthContext";
-import { FaBoxOpen, FaHeart, FaCog, FaHistory, FaUserCircle, FaImage, FaShoppingBag, FaSearch, FaBook } from 'react-icons/fa';
+import { FaBoxOpen, FaHeart, FaCog, FaHistory, FaUserCircle, FaImage, FaShoppingBag, FaSearch, FaBook, FaHome } from 'react-icons/fa';
 import { FiLogOut } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -35,6 +35,26 @@ const UserDashboard = () => {
     { title: "Wishlist Items", value: "0", icon: <FaHeart />, color: "bg-pink-100 text-pink-600" },
     { title: "Account Status", value: "Active", icon: <FaUserCircle />, color: "bg-green-100 text-green-600" },
   ]);
+
+  // Address form state
+  const [addressData, setAddressData] = useState({
+    street: '',
+    city: '',
+    state: '',
+    country: '',
+    zipcode: '',
+    phone: ''
+  });
+  
+  // Loading saved address on component mount
+  useEffect(() => {
+    if (user?.email) {
+      const savedAddress = localStorage.getItem(`address_${user.email}`);
+      if (savedAddress) {
+        setAddressData(JSON.parse(savedAddress));
+      }
+    }
+  }, [user]);
 
   // Fetch user's data on component mount
   useEffect(() => {
@@ -87,6 +107,28 @@ const UserDashboard = () => {
   
       // Close loader manually because it's async
       Swal.close();
+    }
+  };
+
+  // Handle address form input changes
+  const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+    setAddressData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Save address to localStorage
+  const saveAddress = () => {
+    if (user?.email) {
+      localStorage.setItem(`address_${user.email}`, JSON.stringify(addressData));
+      Swal.fire({
+        title: 'Success!',
+        text: 'Your address has been saved successfully.',
+        icon: 'success',
+        confirmButtonColor: '#3085d6'
+      });
     }
   };
 
@@ -194,6 +236,103 @@ const UserDashboard = () => {
                 <span className="text-3xl p-3 rounded-full bg-white/30">{stat.icon}</span>
               </div>
             ))}
+          </div>
+
+          {/* Address Management */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <h3 className="text-xl font-semibold mb-6 flex items-center gap-3 text-gray-900">
+              <FaHome className="text-blue-600 p-2 bg-blue-100 rounded-full" />
+              My Delivery Address
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">Address/Street</label>
+                  <input 
+                    type="text"
+                    name="street"
+                    value={addressData.street}
+                    onChange={handleAddressChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="123 Main Street"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">City</label>
+                  <input 
+                    type="text"
+                    name="city"
+                    value={addressData.city}
+                    onChange={handleAddressChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="City"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">Phone Number</label>
+                  <input 
+                    type="tel"
+                    name="phone"
+                    value={addressData.phone}
+                    onChange={handleAddressChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Your phone number"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-gray-700 font-medium">State/Province</label>
+                  <input 
+                    type="text"
+                    name="state"
+                    value={addressData.state}
+                    onChange={handleAddressChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="State"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">Country</label>
+                    <input 
+                      type="text"
+                      name="country"
+                      value={addressData.country}
+                      onChange={handleAddressChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Country"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-gray-700 font-medium">Zipcode</label>
+                    <input 
+                      type="text"
+                      name="zipcode"
+                      value={addressData.zipcode}
+                      onChange={handleAddressChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Zipcode"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex justify-end">
+              <button 
+                onClick={saveAddress}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save Address
+              </button>
+            </div>
           </div>
 
           {/* Recent Orders */}

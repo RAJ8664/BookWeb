@@ -25,6 +25,7 @@ const categories = [
 ];
 
 const secondaryNavigation = [
+  { name: "All Books", href: "/books" },
   { name: "New Arrivals", href: "/new-arrivals" },
   { name: "Best Sellers", href: "/best-sellers" },
   { name: "Award Winners", href: "/award-winners" },

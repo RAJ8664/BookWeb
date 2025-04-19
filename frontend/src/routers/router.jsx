@@ -17,6 +17,9 @@ import UserSettings from "../components/UserSettings";
 import WishList from "../components/WishList";
 import SingleBook from "../pages/books/singleBook";
 import OrdersPage from "../pages/books/orderPage";
+import AboutPage from "../components/AboutPage";
+import ContactPage from "../components/ContactPage";
+import AllBooks from "../pages/books/AllBooks";
 
 import NewArrival from "../pages/SecondaryNavigationPage/NewArrival";
 import BestSellers from "../pages/SecondaryNavigationPage/BestSellers";
@@ -66,7 +69,15 @@ const router = createBrowserRouter([
       },
       {
         path: "/about",
-        element: <div>About</div>
+        element: <AboutPage />
+      },
+      {
+        path: "/contact",
+        element: <ContactPage />
+      },
+      {
+        path: "/books",
+        element: <AllBooks />
       },
       {
         path: "/login",

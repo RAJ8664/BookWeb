@@ -10,7 +10,7 @@ const cartSlice = createSlice({
     initialState: initialState,
     reducers: {
         addToCart: (state, action) => {
-            const existingItem = state.cartItems.find(item => item.id === action.payload.id)
+            const existingItem = state.cartItems.find(item => item._id === action.payload._id)
             if(!existingItem) {
                 state.cartItems.push({ ...action.payload, quantity: 1 })
                 Swal.fire({
@@ -32,21 +32,23 @@ const cartSlice = createSlice({
             }
         },
         incrementQuantity: (state, action) => {
-            const item = state.cartItems.find(item => item.id === action.payload);
+            const item = state.cartItems.find(item => item._id === action.payload);
             if (item) item.quantity += 1;
         },
         decrementQuantity: (state, action) => {
-            const item = state.cartItems.find(item => item.id === action.payload);
+            const item = state.cartItems.find(item => item._id === action.payload);
             if (item && item.quantity > 1) item.quantity -= 1;
         },
-        removeItem: (state, action) => {
-            state.cartItems = state.cartItems.filter(item => item.id !== action.payload);
+        updateCartItem: (state, action) => {
+            const { _id, ...updates } = action.payload;
+            const existingItem = state.cartItems.find(item => item._id === _id);
+            if (existingItem) {
+                // Update the item with new properties
+                Object.assign(existingItem, updates);
+            }
         },
-
-
-
         removeItem: (state, action) => {
-            state.cartItems = state.cartItems.filter(item => item.id !== action.payload)
+            state.cartItems = state.cartItems.filter(item => item._id !== action.payload);
         },
         clearCart: (state) => {
             state.cartItems = []
@@ -56,10 +58,16 @@ const cartSlice = createSlice({
                 draggable: true
             });
         }
-
-
     }
 })
 
-export const { addToCart, removeItem, clearCart, incrementQuantity, decrementQuantity } = cartSlice.actions;
+export const { 
+    addToCart, 
+    removeItem, 
+    clearCart, 
+    incrementQuantity, 
+    decrementQuantity,
+    updateCartItem 
+} = cartSlice.actions;
+
 export default cartSlice.reducer;
