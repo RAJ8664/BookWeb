@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/pagination";
+import { Pagination, Autoplay } from "swiper/modules";
+
 const Banner1 = () => {
   const [bannerData, setBannerData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,15 +40,47 @@ const Banner1 = () => {
   return (
     <div className="relative bg-white-500 py-20 px-4 md:px-8 overflow-hidden">
       <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12 md:gap-24">
-        {/* Image Section */}
-        <div className="md:w-1/2 w-full flex items-center md:justify-end group relative">
-          <div className="overflow-hidden rounded-2xl shadow-2xl border-8 border-white/20 cursor-pointer">
-            <img 
-              src={bannerData.image} 
-              alt={bannerData.alt || "New book releases banner"}
-              className="w-full h-auto object-cover transform transition-all duration-500 hover:scale-105"
-            />
+        {/* Image Slider Section */}
+        <div className="md:w-1/2 w-full flex items-center justify-center relative">
+          <div className="w-full overflow-hidden rounded-2xl shadow-2xl border-8 border-white/20">
+            <Swiper
+              slidesPerView={1}
+              spaceBetween={30}
+              loop={true}
+              pagination={{
+                clickable: true,
+                bulletClass: 'swiper-pagination-bullet bg-gray-300 opacity-100',
+                bulletActiveClass: 'swiper-pagination-bullet-active bg-gradient-to-r from-blue-500 to-purple-500'
+              }}
+              autoplay={{
+                delay: 3500,
+                disableOnInteraction: false,
+              }}
+              modules={[Pagination, Autoplay]}
+              className="mySwiper"
+            >
+              {/* Default image from banner data */}
+              <SwiperSlide>
+                <img 
+                  src={bannerData.image} 
+                  alt={bannerData.alt || "New book releases"}
+                  className="w-full h-auto object-cover transform transition-all duration-500 hover:scale-105"
+                />
+              </SwiperSlide>
+              
+              {/* Cloudinary images from banner data */}
+              {bannerData.images && bannerData.images.map((image, index) => (
+                <SwiperSlide key={index}>
+                  <img 
+                    src={image} 
+                    alt={`Book banner ${index + 1}`}
+                    className="w-full h-auto object-cover transform transition-all duration-500 hover:scale-105"
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
+          
           {/* Decorative Elements */}
           <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-purple-500/10 rounded-full blur-xl"></div>
           <div className="absolute -top-6 -right-6 w-32 h-32 bg-blue-500/10 rounded-full blur-xl"></div>
