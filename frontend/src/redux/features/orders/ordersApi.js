@@ -5,7 +5,15 @@ import getBaseUrl from "../../../utils/baseURL";
 const ordersApi = createApi({
     reducerPath: 'ordersApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://book-web-backend-xi.vercel.app/api/',
+        baseUrl: `${getBaseUrl()}/api/`,
+        credentials: 'include',
+        prepareHeaders: (headers, api) => {
+            const token = localStorage.getItem('token');
+            if(token) {
+                headers.set('Authorization', `Bearer ${token}`);
+            }
+            return headers;
+        }
     }),
     tagTypes: ['Order'],
     endpoints: (builder) => ({

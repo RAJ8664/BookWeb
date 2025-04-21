@@ -115,7 +115,6 @@ VITE_API_URL=http://localhost:5000/api
 
 ### 🏃‍♂️ Running the Application
 
-
 1. Start the backend server:
 ```bash
 cd backend
@@ -137,7 +136,6 @@ npm run dev
 - **Database**: MongoDB Atlas
 - **CI/CD**: Add GitHub Actions or Vercel auto-deploy from main branch
 
-
 ### 🧠 What I Learned
 
 - Structuring scalable full-stack apps
@@ -149,7 +147,6 @@ npm run dev
 ### 🙌 Contributing
 Contributions are welcome!
 Please open an issue or submit a pull request 🙏
-
 
 ### 👨‍💻 Author
 

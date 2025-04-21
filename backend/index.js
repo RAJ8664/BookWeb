@@ -36,7 +36,7 @@ app.use(express.json());
 const allowedOrigins = [
   'http://localhost:5173',
   'https://book-web-eight-lyart.vercel.app',
-  'https://vercel.com/bishal-roys-projects/book-web'
+  'https://book-web-bishal-roys-projects.vercel.app'
 ];
 
 // CORS pre-flight middleware
@@ -124,6 +124,7 @@ app.get("/", (req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
+  console.error('Error stack:', err.stack);
   res.status(500).json({
     message: 'An unexpected error occurred',
     error: process.env.NODE_ENV === 'production' ? null : err.message
