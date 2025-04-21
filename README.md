@@ -120,14 +120,6 @@ npm run dev
 - **Database**: MongoDB Atlas
 - **CI/CD**: Add GitHub Actions or Vercel auto-deploy from main branch
 
-### 📝 TODOs
- 
- - ✅ JWT-based authentication
- - ✅ Full cart & wishlist support
- - ✅ Admin analytics with Chart.js
- - ✅ Secure cloud image uploads
- - ✅ CSV bulk upload feature
- - <span disabled type = "checkbox"> == $0 Add Razorpay/Stripe support for global checkout
 
 ### 🧠 What I Learned
 
