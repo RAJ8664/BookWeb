@@ -7,6 +7,23 @@ BookWeb is a full-stack online bookstore application built with React and Node.j
 🎬 Live Demo:
 https://book-web-eight-lyart.vercel.app
 
+## 📑 Table of Contents
+- [Features](#-features)
+  - [User Features](#-user-features)
+  - [Admin Features](#-admin-features)
+- [Tech Stack](#️-tech-stack)
+  - [Frontend](#️-frontend)
+  - [Backend](#️-backend)
+- [Architecture](#️-architecture)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#-installation)
+  - [Running the Application](#️-running-the-application)
+- [CI/CD & Deployment](#-cicd--deployment)
+- [What I Learned](#-what-i-learned)
+- [Contributing](#-contributing)
+- [Author](#-author)
+- [License](#-license)
 
 ## 🧩 Features
 
