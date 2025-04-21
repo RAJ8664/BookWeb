@@ -122,12 +122,12 @@ npm run dev
 
 ### 📝 TODOs
  
- -✅ JWT-based authentication
- -✅ Full cart & wishlist support
- -✅ Admin analytics with Chart.js
- -✅ Secure cloud image uploads
- -✅ CSV bulk upload feature
- - <span style="border: 2px solid green;">[ ]</span> Add Razorpay/Stripe support for global checkout
+ - ✅ JWT-based authentication
+ - ✅ Full cart & wishlist support
+ - ✅ Admin analytics with Chart.js
+ - ✅ Secure cloud image uploads
+ - ✅ CSV bulk upload feature
+ - <span disabled type = "checkbox"> == $0 Add Razorpay/Stripe support for global checkout
 
 ### 🧠 What I Learned
 
