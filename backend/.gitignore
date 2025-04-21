@@ -7,6 +7,12 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.test
+.env.production
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Service account keys
 serviceAccountKey.json
