@@ -38,15 +38,15 @@ https://book-web-eight-lyart.vercel.app
 - Book request system for unavailable titles
 
 ### ⚙️ Backend
--RESTful API with Express.js
--MongoDB with Mongoose
--JWT authentication + role-based access
--Book CRUD operations with image upload to Cloudinary
--CSV import/export for book data
--Optimized MongoDB queries with indexing
--Email notifications (via EmailJS)
+- RESTful API with Express.js
+- MongoDB with Mongoose
+- JWT authentication + role-based access
+- Book CRUD operations with image upload to Cloudinary
+- CSV import/export for book data
+- Optimized MongoDB queries with indexing
+- Email notifications (via EmailJS)
 
-## 🏗️ Architecture
+### 🏗️ Architecture
 
 The application is built with a modern microservices architecture:
 
@@ -112,14 +112,14 @@ npm run dev
 
 3. Access the application at: http://localhost:5173
 
-## ⚡ CI/CD & Deployment
+### ⚡ CI/CD & Deployment
 - **Frontend**: Deployed to Vercel
 - **Backend**: Deployed to vercel
 - **Authentication**: Firebase Authentication for JWT handling
 - **Database**: MongoDB Atlas
 - **CI/CD**: Add GitHub Actions or Vercel auto-deploy from main branch
 
-## 📝 TODOs
+### 📝 TODOs
  
  -✅ JWT-based authentication
  -✅ Full cart & wishlist support
@@ -128,7 +128,7 @@ npm run dev
  -✅ CSV bulk upload feature
  - <span style="border: 2px solid green;">[ ]</span> Add Razorpay/Stripe support for global checkout
 
-## 🧠 What I Learned
+### 🧠 What I Learned
 
 - Structuring scalable full-stack apps
 - Middleware, route protection, and auth guards
@@ -136,16 +136,16 @@ npm run dev
 - Responsive UX/UI design principles
 - Handling real-time admin analytics
 
-## 🙌 Contributing
+### 🙌 Contributing
 Contributions are welcome!
 Please open an issue or submit a pull request 🙏
 
 
-## 👨‍💻 Author
+### 👨‍💻 Author
 
 - **Bishal Roy** - [GitHub Profile](https://github.com/arthurr455565)
 - **Email** - bishalroy909@gmail.com
 
-## 📄 License
+### 📄 License
 
 This project is licensed under the ISC License - see the LICENSE file for details.
