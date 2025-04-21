@@ -4,7 +4,7 @@
 
 BookWeb is a full-stack online bookstore application built with React and Node.js, allowing users to browse, purchase, and manage books. The application features user authentication, book management, shopping cart functionality, and an admin dashboard for store management.
 
-🎬 Live Demo
+🎬 Live Demo:
 https://book-web-eight-lyart.vercel.app
 
 
@@ -29,13 +29,13 @@ https://book-web-eight-lyart.vercel.app
 ## 🛠️ Tech Stack
 
 ### 🖥️ Frontend
--Responsive UI (mobile-first)
--Redux + Context API state management
--User authentication (JWT, Google, Phone)
--Product filtering, search, and category browsing
--Wishlist & cart functionality
--Checkout with multiple payment methods (eSewa, Khalti, Card, COD)
--Book request system for unavailable titles
+- Responsive UI (mobile-first)
+- Redux + Context API state management
+- User authentication (JWT, Google, Phone)
+- Product filtering, search, and category browsing
+- Wishlist & cart functionality
+- Checkout with multiple payment methods (eSewa, Khalti, Card, COD)
+- Book request system for unavailable titles
 
 ### ⚙️ Backend
 -RESTful API with Express.js
@@ -113,11 +113,11 @@ npm run dev
 3. Access the application at: http://localhost:5173
 
 ## ⚡ CI/CD & Deployment
--Frontend: Deployed to Vercel
-
--Backend: Deployed to vercel
-
--CI/CD: Add GitHub Actions or Vercel auto-deploy from main branch
+- **Frontend**: Deployed to Vercel
+- **Backend**: Deployed to vercel
+- **Authentication**: Firebase Authentication for JWT handling
+- **Database**: MongoDB Atlas
+- **CI/CD**: Add GitHub Actions or Vercel auto-deploy from main branch
 
 ## 📝 TODOs
  
@@ -129,29 +129,22 @@ npm run dev
  - <span style="border: 2px solid green;">[ ]</span> Add Razorpay/Stripe support for global checkout
 
 ## 🧠 What I Learned
--Structuring scalable full-stack apps
--Middleware, route protection, and auth guards
--Efficient MongoDB schema design and indexing
--Responsive UX/UI design principles
--Handling real-time admin analytics
+
+- Structuring scalable full-stack apps
+- Middleware, route protection, and auth guards
+- Efficient MongoDB schema design and indexing
+- Responsive UX/UI design principles
+- Handling real-time admin analytics
 
 ## 🙌 Contributing
 Contributions are welcome!
 Please open an issue or submit a pull request 🙏
 
 
-
-## 🌐 Deployment
-
-The application is configured for deployment on Vercel:
-- Frontend: Static site hosting
-- Backend: Serverless functions
-- Authentication: Firebase Authentication for JWT handling
-- Database: MongoDB Atlas
-
 ## 👨‍💻 Author
 
 - **Bishal Roy** - [GitHub Profile](https://github.com/arthurr455565)
+- **Email** - bishalroy909@gmail.com
 
 ## 📄 License
 
