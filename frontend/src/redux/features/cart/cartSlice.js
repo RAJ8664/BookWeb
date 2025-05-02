@@ -47,6 +47,11 @@ const cartSlice = createSlice({
                 Object.assign(existingItem, updates);
             }
         },
+        updateEntireCart: (state, action) => {
+            // Replace the entire cart items array
+            console.log('Updating entire cart with new items array:', action.payload);
+            state.cartItems = action.payload;
+        },
         removeItem: (state, action) => {
             const idToRemove = action.payload;
             console.log(`[cartSlice] Removing item with ID: ${idToRemove}, type: ${typeof idToRemove}`);
@@ -96,7 +101,8 @@ export const {
     clearCart, 
     incrementQuantity, 
     decrementQuantity,
-    updateCartItem 
+    updateCartItem,
+    updateEntireCart
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

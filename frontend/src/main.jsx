@@ -8,6 +8,7 @@ import { store } from "./redux/store.js";
 import { Toaster } from 'react-hot-toast';
 import 'sweetalert2/dist/sweetalert2.js';
 import { AuthProvider } from './context/AuthContext'; // ✅ import AuthProvide
+import './test-cart'; // Include cart testing utilities
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>

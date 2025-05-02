@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearCart, removeItem } from '../../redux/features/cart/cartSlice';
+import { clearCart } from '../../redux/features/cart/cartSlice';
 
 /**
  * Helper component to handle cart updates after successful payment
@@ -22,37 +22,64 @@ const PaymentCompletionHandler = ({ orderId, isSuccessful, purchasedItems = [], 
         if (isDirectPurchase && purchasedItems.length > 0) {
           console.log(`Selectively removing purchased items from cart: `, purchasedItems);
           
-          // Remove each purchased item that exists in the cart
-          purchasedItems.forEach(purchasedItemId => {
-            console.log(`Checking item ID: ${purchasedItemId}`);
-            console.log(`ID type: ${typeof purchasedItemId}`);
-            
-            // Log all cart item IDs for comparison
-            console.log('All cart item IDs:');
-            cartItems.forEach(item => {
-              console.log(`- Cart item ID: ${item._id} (type: ${typeof item._id})`);
-            });
-            
-            // Try direct comparison and also string comparison
-            const itemInCart = cartItems.find(item => 
-              item._id === purchasedItemId || // Direct comparison
-              item._id === String(purchasedItemId) || // String comparison 
-              String(item._id) === String(purchasedItemId) // Both as strings
-            );
-            
-            if (itemInCart) {
-              console.log(`Found item in cart:`, itemInCart);
-              console.log(`Dispatching removeItem with ID: ${purchasedItemId}`);
-              dispatch(removeItem(purchasedItemId));
-              console.log(`Removed purchased item from cart: ${purchasedItemId}`);
-            } else {
-              console.log(`Item with ID ${purchasedItemId} not found in cart`);
-            }
+          // Create a more flexible ID matcher function (same as in cartSlice)
+          const compareIds = (itemId, targetId) => {
+            // Try different comparison strategies
+            return itemId === targetId || // Direct comparison
+                 String(itemId) === String(targetId) || // String comparison
+                 itemId?.toString() === targetId?.toString() || // toString comparison
+                 itemId === targetId?._id || // MongoDB nested ID
+                 itemId?._id === targetId; // MongoDB _id vs regular id
+          };
+
+          // Find all items to remove
+          const itemsToRemove = cartItems.filter(cartItem => {
+            // Check if this cart item's ID matches any of the purchased item IDs
+            return purchasedItems.some(purchasedId => 
+              compareIds(cartItem._id, purchasedId));
           });
+          
+          console.log('Items that will be removed:', itemsToRemove);
+          
+          // If we found items to remove, dispatch actions to remove them
+          if (itemsToRemove.length > 0) {
+            // IMPORTANT: We'll directly update the cart in the Redux store
+            // Get the Redux store and dispatch directly
+            const store = window.store;
+            if (store) {
+              // Get current cart items
+              let updatedCartItems = [...cartItems];
+              
+              // Remove each matched item
+              itemsToRemove.forEach(itemToRemove => {
+                console.log(`Removing item from cart:`, itemToRemove.title || itemToRemove._id);
+                
+                // Filter out the item from our updated cart
+                updatedCartItems = updatedCartItems.filter(item => 
+                  !compareIds(item._id, itemToRemove._id)
+                );
+              });
+              
+              // Dispatch a complete cart update action
+              store.dispatch({
+                type: 'cart/updateEntireCart',
+                payload: updatedCartItems
+              });
+              
+              console.log('Updated cart with items removed');
+            } else {
+              console.error('Store not available on window object');
+              
+              // Fallback to clearing the entire cart if we can't selectively remove
+              dispatch(clearCart());
+            }
+          } else {
+            console.log('No matching items found in cart to remove');
+          }
           
           // Log the cart items after removal attempts
           setTimeout(() => {
-            const updatedCart = window.store.getState().cart.cartItems;
+            const updatedCart = window.store?.getState().cart.cartItems || [];
             console.log('Cart items after removal:', updatedCart);
           }, 100);
         } 
