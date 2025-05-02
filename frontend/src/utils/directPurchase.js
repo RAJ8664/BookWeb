@@ -11,6 +11,8 @@ export const setupDirectPurchase = (itemIds) => {
   // Convert single ID to array if needed
   const purchasedItems = Array.isArray(itemIds) ? itemIds : [itemIds];
   
+  console.log('[DEBUG] Setting up direct purchase with items:', purchasedItems);
+  
   // Store in localStorage
   localStorage.setItem('isDirectPurchase', 'true');
   localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems));

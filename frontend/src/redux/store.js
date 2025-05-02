@@ -68,3 +68,8 @@ export const store = configureStore({
       esewaApi.middleware
     ),
 });
+
+// Expose store for debugging
+if (typeof window !== 'undefined') {
+  window.store = store;
+}

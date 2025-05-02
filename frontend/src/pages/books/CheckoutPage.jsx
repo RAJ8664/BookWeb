@@ -329,12 +329,21 @@ const CheckoutPage = () => {
                         <div className="text-center mt-8">
                             <button
                                 onClick={() => {
+                                    console.log('Go to Orders clicked');
+                                    console.log('Payment method:', createdOrder.paymentMethod);
+                                    console.log('Is direct purchase:', isDirectPurchase);
+                                    
                                     if (createdOrder.paymentMethod === 'Cash on Delivery') {
                                         // If direct purchase, only remove those items
                                         if (isDirectPurchase) {
-                                            purchasedItemIds.forEach(id => dispatch(removeItem(id)));
+                                            console.log('Direct purchase, removing specific items:', purchasedItemIds);
+                                            purchasedItemIds.forEach(id => {
+                                                console.log(`Removing item with ID: ${id}`);
+                                                dispatch(removeItem(id));
+                                            });
                                         } else {
                                             // Regular cart checkout
+                                            console.log('Regular checkout, clearing entire cart');
                                             dispatch(clearCart());
                                         }
                                     }

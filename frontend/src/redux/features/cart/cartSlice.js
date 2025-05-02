@@ -48,7 +48,36 @@ const cartSlice = createSlice({
             }
         },
         removeItem: (state, action) => {
-            state.cartItems = state.cartItems.filter(item => item._id !== action.payload);
+            const idToRemove = action.payload;
+            console.log(`[cartSlice] Removing item with ID: ${idToRemove}, type: ${typeof idToRemove}`);
+            
+            // Create a more flexible ID matcher function
+            const compareIds = (itemId, targetId) => {
+                // Try different comparison strategies
+                return itemId === targetId || // Direct comparison
+                      String(itemId) === String(targetId) || // String comparison
+                      itemId?.toString() === targetId?.toString() || // toString comparison
+                      itemId === targetId?._id || // MongoDB nested ID
+                      itemId?._id === targetId; // MongoDB _id vs regular id
+            };
+            
+            // First try to filter by _id (MongoDB style)
+            const initialLength = state.cartItems.length;
+            state.cartItems = state.cartItems.filter(item => {
+                // Check all possible ID formats (id, _id)
+                const itemId = item._id || item.id;
+                
+                // If any ID matches, remove the item
+                if (compareIds(itemId, idToRemove)) {
+                    console.log(`[cartSlice] Found and removing item:`, item);
+                    return false; // Remove this item
+                }
+                return true; // Keep this item
+            });
+            
+            // Log whether anything was removed
+            const removed = initialLength !== state.cartItems.length;
+            console.log(`[cartSlice] Items removed: ${removed ? 'yes' : 'no'}, Items remaining: ${state.cartItems.length}`);
         },
         clearCart: (state) => {
             state.cartItems = []

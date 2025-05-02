@@ -10,15 +10,27 @@ const PaymentHandler = ({ paymentMethod, orderId, isDirectPurchase = false, purc
   // Track the payment status for Cash on Delivery (it's always successful)
   const isCODSuccessful = paymentMethod === 'Cash on Delivery';
   
+  console.log('[PaymentHandler] Initialized with:', {
+    paymentMethod,
+    orderId,
+    isDirectPurchase,
+    purchasedItems
+  });
+  
   // Store direct purchase information in localStorage for eSewa payments
   useEffect(() => {
     if (isDirectPurchase && purchasedItems.length > 0) {
+      console.log('[PaymentHandler] Storing direct purchase info in localStorage');
+      console.log('isDirectPurchase:', isDirectPurchase);
+      console.log('purchasedItems:', purchasedItems);
+      
       localStorage.setItem('isDirectPurchase', 'true');
       localStorage.setItem('purchasedItems', JSON.stringify(purchasedItems));
     }
     return () => {
       // Clean up localStorage when component unmounts
       if (!isDirectPurchase) {
+        console.log('[PaymentHandler] Cleaning up localStorage on unmount');
         localStorage.removeItem('isDirectPurchase');
         localStorage.removeItem('purchasedItems');
       }
@@ -90,12 +102,21 @@ const PaymentHandler = ({ paymentMethod, orderId, isDirectPurchase = false, purc
     <div className="mt-6">
       {/* Add PaymentCompletionHandler to handle cart clearing for COD orders */}
       {isCODSuccessful && (
-        <PaymentCompletionHandler 
-          orderId={orderId} 
-          isSuccessful={true}
-          isDirectPurchase={isDirectPurchase}
-          purchasedItems={purchasedItems}
-        />
+        <>
+          <div className="mb-4 p-3 bg-gray-100 rounded-lg text-xs" style={{ display: 'none' }}>
+            <p>Debug Info (hidden in production):</p>
+            <p>Payment Method: {paymentMethod}</p>
+            <p>Order ID: {orderId}</p>
+            <p>Is Direct Purchase: {String(isDirectPurchase)}</p>
+            <p>Purchased Items: {JSON.stringify(purchasedItems)}</p>
+          </div>
+          <PaymentCompletionHandler 
+            orderId={orderId} 
+            isSuccessful={true}
+            isDirectPurchase={isDirectPurchase}
+            purchasedItems={purchasedItems}
+          />
+        </>
       )}
       
       {renderPaymentMethod()}
