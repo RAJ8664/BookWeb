@@ -24,6 +24,7 @@ https://book-web-eight-lyart.vercel.app
 - [Contributing](#-contributing)
 - [Author](#-author)
 - [License](#-license)
+- [eSewa Payment Integration](#-eSewa-payment-integration)
 
 ## 🧩 Features
 
@@ -115,6 +116,7 @@ VITE_API_URL=http://localhost:5000/api
 
 ### 🏃‍♂️ Running the Application
 
+
 1. Start the backend server:
 ```bash
 cd backend
@@ -136,6 +138,7 @@ npm run dev
 - **Database**: MongoDB Atlas
 - **CI/CD**: Add GitHub Actions or Vercel auto-deploy from main branch
 
+
 ### 🧠 What I Learned
 
 - Structuring scalable full-stack apps
@@ -148,6 +151,7 @@ npm run dev
 Contributions are welcome!
 Please open an issue or submit a pull request 🙏
 
+
 ### 👨‍💻 Author
 
 - **Bishal Roy** - [GitHub Profile](https://github.com/arthurr455565)
@@ -156,3 +160,34 @@ Please open an issue or submit a pull request 🙏
 ### 📄 License
 
 This project is licensed under the ISC License - see the LICENSE file for details.
+
+## eSewa Payment Integration
+
+This application includes integration with the eSewa payment gateway for real-time online payments.
+
+### How to Use eSewa Payments:
+
+1. During checkout, select "eSewa" as your payment method
+2. Complete the checkout form and click "Place Order"
+3. You'll be redirected to the eSewa login page
+4. Log in to your eSewa account and confirm the payment
+5. After successful payment, you'll be redirected back to the application
+
+### Testing eSewa Payments:
+
+For testing, you can use the following credentials:
+- eSewa ID: 9806800001
+- Password: Nepal@123
+- MPIN: 1122
+
+### eSewa Payment Flow:
+
+1. User selects eSewa as payment method and places order
+2. Backend creates the order and generates a signed payment request
+3. User is redirected to eSewa login page
+4. User logs in and confirms payment
+5. eSewa redirects back to success/failure URL
+6. Backend verifies the payment signature and updates order status
+7. User sees payment confirmation
+
+Note: eSewa integration uses HMAC-SHA256 for secure transaction verification.

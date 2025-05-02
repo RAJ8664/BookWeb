@@ -8,12 +8,17 @@ import { useFetchAllBooksQuery } from '../../redux/features/books/booksAPI';
 
 import Swal from 'sweetalert2';
 import { useCreateOrderMutation } from '../../redux/features/orders/ordersApi';
+import PaymentHandler from '../../components/payments/PaymentHandler';
 
 const CheckoutPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user, loading } = useAuth();
+    
+    // State to track newly created order
+    const [createdOrder, setCreatedOrder] = useState(null);
+    const [isOrderProcessing, setIsOrderProcessing] = useState(false);
     
     // Fetch latest book data to ensure prices are up-to-date
     const { data: latestBooks, isLoading: booksLoading } = useFetchAllBooksQuery();
@@ -59,7 +64,7 @@ const CheckoutPage = () => {
     
     // Redirect if cart is empty
     useEffect(() => {
-        if (!loading && cartItems.length === 0) {
+        if (!loading && cartItems.length === 0 && !createdOrder) {
             Swal.fire({
                 title: "Empty Cart",
                 text: "Your cart is empty. Add some items before checkout.",
@@ -69,7 +74,7 @@ const CheckoutPage = () => {
                 navigate("/");
             });
         }
-    }, [cartItems, loading, navigate]);
+    }, [cartItems, loading, navigate, createdOrder]);
     
     // Redirect if not logged in
     useEffect(() => {
@@ -124,7 +129,7 @@ const CheckoutPage = () => {
     }
     
     // If cart is empty after loading is complete, show a message
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 && !createdOrder) {
         return <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Cart is Empty</h2>
@@ -143,7 +148,8 @@ const CheckoutPage = () => {
         register,
         handleSubmit,
         formState: { errors },
-        setValue
+        setValue,
+        watch
     } = useForm({
         defaultValues: {
             name: user?.displayName || "",
@@ -153,9 +159,13 @@ const CheckoutPage = () => {
             state: savedAddress?.state || "",
             country: savedAddress?.country || "",
             zipcode: savedAddress?.zipcode || "",
-            phone: savedAddress?.phone || ""
+            phone: savedAddress?.phone || "",
+            paymentMethod: "Cash on Delivery" // Default payment method
         }
     });
+    
+    // Get the current value of paymentMethod
+    const selectedPaymentMethod = watch("paymentMethod");
     
     // Set saved address values when they are loaded
     useEffect(() => {
@@ -173,54 +183,106 @@ const CheckoutPage = () => {
     const [isChecked, setIsChecked] = useState(false);
 
     const onSubmit = async (data) => {
-        const numericTotalPrice = parseFloat(totalPrice);
-        
-        if (isNaN(numericTotalPrice)) {
-            Swal.fire({
-                title: "Invalid Order",
-                text: "There was an error calculating the total price. Please try again.",
-                icon: "error",
-                confirmButtonColor: "#3085d6"
-            });
-            return;
-        }
-        
-        const newOrder = {
-            name: data.name,
-            email: user.email,
-            address: {
-                street: data.address,
-                city: data.city,
-                country: data.country,
-                state: data.state,
-                zipcode: data.zipcode
-            },
-            phone: data.phone,
-            productIds: cartItems.map(item => item?._id),
-            products: cartItems.map(item => ({
+        try {
+            setIsOrderProcessing(true);
+            let numericTotalPrice = parseFloat(totalPrice);
+            
+            if (isNaN(numericTotalPrice)) {
+                Swal.fire({
+                    title: "Invalid Order",
+                    text: "There was an error calculating the total price. Please try again.",
+                    icon: "error",
+                    confirmButtonColor: "#3085d6"
+                });
+                setIsOrderProcessing(false);
+                return;
+            }
+            
+            // Check if this is a direct purchase (not from cart)
+            // If there's a direct purchase flag in localStorage, this is a direct purchase
+            const isDirectPurchase = localStorage.getItem('isDirectPurchase') === 'true';
+            
+            // Get purchased items if this is a direct purchase
+            let productIds = cartItems.map(item => item?._id);
+            let products = cartItems.map(item => ({
                 id: item?._id,
                 title: item?.title,
                 price: item?.price || item?.newPrice,
                 quantity: item?.quantity || 1
-            })),
-            totalPrice: numericTotalPrice,
-            orderDate: new Date().toISOString(),
-            status: "pending",
-            paymentMethod: data.paymentMethod || "Cash on Delivery",
-            shippingMethod: data.shippingMethod || "Standard",
-            specialInstructions: data.specialInstructions || ""
-        }
-        
-        try {
-            await createOrder(newOrder).unwrap();
-            dispatch(clearCart());
-            Swal.fire({
-                title: "Order Confirmed!",
-                text: "Your order has been placed successfully!",
-                icon: "success",
-                confirmButtonColor: "#3085d6"
-            });
-            navigate("/orders");
+            }));
+            
+            // For direct purchases, only include the directly purchased items
+            if (isDirectPurchase) {
+                const purchasedItemIds = JSON.parse(localStorage.getItem('purchasedItems') || '[]');
+                
+                // Filter cart items to only include the ones being purchased directly
+                productIds = purchasedItemIds;
+                products = cartItems
+                    .filter(item => purchasedItemIds.includes(item._id))
+                    .map(item => ({
+                        id: item._id,
+                        title: item.title,
+                        price: item.price || item.newPrice,
+                        quantity: item.quantity || 1
+                    }));
+                
+                // Recalculate total price based on selected items only
+                const directPurchaseTotal = products.reduce((sum, product) => {
+                    return sum + (product.price * product.quantity);
+                }, 0);
+                
+                if (products.length > 0) {
+                    numericTotalPrice = directPurchaseTotal;
+                }
+            }
+            
+            const newOrder = {
+                name: data.name,
+                email: user.email,
+                address: {
+                    street: data.address,
+                    city: data.city,
+                    country: data.country,
+                    state: data.state,
+                    zipcode: data.zipcode
+                },
+                phone: data.phone,
+                productIds: productIds,
+                products: products,
+                totalPrice: numericTotalPrice,
+                orderDate: new Date().toISOString(),
+                status: "pending",
+                paymentMethod: data.paymentMethod,
+                shippingMethod: data.shippingMethod || "Standard",
+                specialInstructions: data.specialInstructions || "",
+                isDirectPurchase: isDirectPurchase
+            }
+            
+            // Create the order in the database
+            const savedOrder = await createOrder(newOrder).unwrap();
+            setCreatedOrder(savedOrder);
+            
+            // If payment method is not eSewa, clear cart and redirect to orders page
+            if (data.paymentMethod !== 'eSewa') {
+                if (isDirectPurchase) {
+                    // If direct purchase, only remove those specific items from cart
+                    const purchasedItems = JSON.parse(localStorage.getItem('purchasedItems') || '[]');
+                    purchasedItems.forEach(itemId => {
+                        dispatch(removeItem(itemId));
+                    });
+                } else {
+                    // Regular cart checkout - clear the entire cart
+                    dispatch(clearCart());
+                }
+                
+                Swal.fire({
+                    title: "Order Confirmed!",
+                    text: "Your order has been placed successfully!",
+                    icon: "success",
+                    confirmButtonColor: "#3085d6"
+                });
+                navigate("/orders");
+            }
         } catch (error) {
             console.error("Error placing order:", error);
             Swal.fire({
@@ -229,10 +291,72 @@ const CheckoutPage = () => {
                 icon: "error",
                 confirmButtonColor: "#3085d6"
             });
+        } finally {
+            setIsOrderProcessing(false);
         }
     }
 
-    if(isLoading) {
+    // If a payment is being processed, show the payment handler
+    if (createdOrder) {
+        // Check if this is a direct purchase (not from cart)
+        const isDirectPurchase = createdOrder.isDirectPurchase || false;
+        const purchasedItemIds = createdOrder.productIds || [];
+        
+        return (
+            <div className="min-h-screen bg-gray-50 p-6">
+                <div className="container mx-auto max-w-3xl">
+                    <div className="bg-white rounded-xl shadow-lg p-8">
+                        <div className="text-center mb-8">
+                            <h2 className="text-2xl font-bold text-gray-800">Order Created Successfully!</h2>
+                            <p className="text-gray-500 mt-2">Order #{createdOrder._id}</p>
+                        </div>
+                        
+                        <div className="bg-blue-50 p-6 rounded-lg mb-8">
+                            <h3 className="text-xl font-semibold text-blue-800 mb-4">Complete Your Payment</h3>
+                            <p className="text-gray-600 mb-6">
+                                Please complete your payment using the selected method below.
+                            </p>
+                            
+                            {/* Payment handler component */}
+                            <PaymentHandler 
+                                paymentMethod={createdOrder.paymentMethod} 
+                                orderId={createdOrder._id}
+                                isDirectPurchase={isDirectPurchase}
+                                purchasedItems={purchasedItemIds}
+                            />
+                        </div>
+                        
+                        <div className="text-center mt-8">
+                            <button
+                                onClick={() => {
+                                    if (createdOrder.paymentMethod === 'Cash on Delivery') {
+                                        // If direct purchase, only remove those items
+                                        if (isDirectPurchase) {
+                                            purchasedItemIds.forEach(id => dispatch(removeItem(id)));
+                                        } else {
+                                            // Regular cart checkout
+                                            dispatch(clearCart());
+                                        }
+                                    }
+                                    
+                                    // Clean up direct purchase flags
+                                    localStorage.removeItem('isDirectPurchase');
+                                    localStorage.removeItem('purchasedItems');
+                                    
+                                    navigate("/orders");
+                                }}
+                                className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded"
+                            >
+                                Go to Orders
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if(isLoading || isOrderProcessing) {
         return <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -251,7 +375,7 @@ const CheckoutPage = () => {
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold text-gray-800">Checkout</h2>
                   <div className="space-y-1 text-gray-600">
-                    <p>Total Price: ₹{totalPrice}</p>
+                    <p>Total Price: Rs.{totalPrice}</p>
                     <p>Items: {cartItems.reduce((total, item) => total + (item.quantity || 1), 0)}</p>
                   </div>
                 </div>
@@ -264,14 +388,14 @@ const CheckoutPage = () => {
                       <li key={index} className="flex justify-between">
                         <span>{item.title} ×{item.quantity || 1}</span>
                         <span className="font-medium">
-                          ₹{((item.newPrice || item.price) * (item.quantity || 1)).toFixed(2)}
+                          Rs.{((item.newPrice || item.price) * (item.quantity || 1)).toFixed(2)}
                         </span>
                       </li>
                     ))}
                   </ul>
                   <div className="border-t pt-3 flex justify-between font-semibold text-gray-800">
                     <span>Total:</span>
-                    <span>₹{totalPrice}</span>
+                    <span>Rs.{totalPrice}</span>
                   </div>
                 </div>
               </div>
@@ -296,12 +420,77 @@ const CheckoutPage = () => {
                       </div>
                     )}
                     
-                    {/* Payment Notice */}
-                    <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                      <p className="font-medium text-yellow-700">Cash On Delivery</p>
-                      <p className="text-xs text-yellow-600 mt-1">
-                        Payment will be collected upon delivery
-                      </p>
+                    {/* Payment Options */}
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-gray-700">Payment Methods</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label 
+                          className={`p-3 border rounded-md flex items-center cursor-pointer ${
+                            selectedPaymentMethod === "Cash on Delivery" 
+                              ? "border-blue-500 bg-blue-50" 
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <input 
+                            type="radio"
+                            value="Cash on Delivery"
+                            {...register("paymentMethod")}
+                            className="mr-2"
+                          />
+                          <span>Cash on Delivery</span>
+                        </label>
+                        
+                        <label 
+                          className={`p-3 border rounded-md flex items-center cursor-pointer ${
+                            selectedPaymentMethod === "eSewa" 
+                              ? "border-green-500 bg-green-50" 
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <input 
+                            type="radio"
+                            value="eSewa"
+                            {...register("paymentMethod")}
+                            className="mr-2"
+                          />
+                          <span>eSewa</span>
+                        </label>
+                        
+                        <label 
+                          className={`p-3 border rounded-md flex items-center cursor-pointer ${
+                            selectedPaymentMethod === "Credit Card" 
+                              ? "border-purple-500 bg-purple-50" 
+                              : "border-gray-200 text-gray-400"
+                          }`}
+                        >
+                          <input 
+                            type="radio"
+                            value="Credit Card"
+                            {...register("paymentMethod")}
+                            className="mr-2"
+                            disabled
+                          />
+                          <span>Credit Card</span>
+                        </label>
+                        
+                        <label 
+                          className={`p-3 border rounded-md flex items-center cursor-pointer ${
+                            selectedPaymentMethod === "PayPal" 
+                              ? "border-blue-500 bg-blue-50" 
+                              : "border-gray-200 text-gray-400"
+                          }`}
+                        >
+                          <input 
+                            type="radio"
+                            value="PayPal"
+                            {...register("paymentMethod")}
+                            className="mr-2"
+                            disabled
+                          />
+                          <span>PayPal</span>
+                        </label>
+                      </div>
+                      {errors.paymentMethod && <p className="text-red-500 text-xs mt-1">{errors.paymentMethod.message}</p>}
                     </div>
                   </div>
     
@@ -410,26 +599,8 @@ const CheckoutPage = () => {
                         />
                       </div>
     
-                      {/* Payment Method */}
-                      <div className="md:col-span-3">
-                        <label htmlFor="paymentMethod" className="block text-gray-700 font-medium mb-2">
-                          Payment Method
-                        </label>
-                        <select
-                          id="paymentMethod"
-                          className={`h-10 border ${errors.paymentMethod ? "border-red-500" : "border-gray-300"} rounded px-4 w-full text-sm focus:outline-none focus:border-blue-500`}
-                          {...register("paymentMethod", { required: "Payment method is required" })}
-                        >
-                          <option value="Cash on Delivery">Cash on Delivery</option>
-                          <option value="Credit Card">Credit Card</option>
-                          <option value="Debit Card">Debit Card</option>
-                          <option value="PayPal">PayPal</option>
-                        </select>
-                        {errors.paymentMethod && <p className="text-red-500 text-xs mt-1">{errors.paymentMethod.message}</p>}
-                      </div>
-
                       {/* Shipping Method */}
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-5">
                         <label htmlFor="shippingMethod" className="block text-gray-700 font-medium mb-2">
                           Shipping Method
                         </label>

@@ -5,6 +5,7 @@ import wishlistReducer from "./features/wishlist/wishlistSlice";
 import ordersReducer from "./features/orders/ordersSlice";
 import booksAPI from "./features/books/booksAPI";
 import ordersApi from "./features/orders/ordersApi";
+import esewaApi from "./features/payments/esewaApi";
 import { bookRequestApi } from "./features/bookRequest/bookRequestApi";
 
 // Load state from localStorage
@@ -55,6 +56,7 @@ export const store = configureStore({
     [booksAPI.reducerPath]: booksAPI.reducer,
     [ordersApi.reducerPath]: ordersApi.reducer,
     [bookRequestApi.reducerPath]: bookRequestApi.reducer,
+    [esewaApi.reducerPath]: esewaApi.reducer,
   },
   preloadedState,
   middleware: (getDefaultMiddleware) =>
@@ -62,6 +64,7 @@ export const store = configureStore({
       booksAPI.middleware, 
       ordersApi.middleware,
       localStorageMiddleware,
-      bookRequestApi.middleware
+      bookRequestApi.middleware,
+      esewaApi.middleware
     ),
 });

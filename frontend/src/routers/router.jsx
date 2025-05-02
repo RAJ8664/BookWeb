@@ -20,11 +20,16 @@ import OrdersPage from "../pages/books/orderPage";
 import AboutPage from "../components/AboutPage";
 import ContactPage from "../components/ContactPage";
 import AllBooks from "../pages/books/AllBooks";
+import CategoryBooks from "../pages/categories/CategoryBooks";
 
 import NewArrival from "../pages/SecondaryNavigationPage/NewArrival";
 import BestSellers from "../pages/SecondaryNavigationPage/BestSellers";
 import AwardWinners from "../pages/SecondaryNavigationPage/AwardWinners";
 import RequestBook from "../pages/SecondaryNavigationPage/RequestBook";
+
+// Payment Pages
+import EsewaSuccess from "../pages/payment/EsewaSuccess";
+import EsewaFailure from "../pages/payment/EsewaFailure";
 
 import AdminRoute from "./AdminRoute";
 import AdminLogin from "../components/AdminLogin"
@@ -142,6 +147,19 @@ const router = createBrowserRouter([
       {
         path: "/request-book",
         element: <RequestBook />
+      },
+      {
+        path: "/categories/:category",
+        element: <CategoryBooks />
+      },
+      // eSewa payment routes
+      {
+        path: "/payment/esewa/success",
+        element: <EsewaSuccess />
+      },
+      {
+        path: "/payment/esewa/failure",
+        element: <EsewaFailure />
       }
     ]
   },

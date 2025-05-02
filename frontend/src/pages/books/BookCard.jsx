@@ -59,8 +59,14 @@ const BookCard = ({ book }) => {
     if (!isInCart) {
       dispatch(addToCart(product));
     }
-    // Navigate to checkout
-    navigate('/checkout');
+    
+    // Set up direct purchase mode
+    import('../../utils/directPurchase').then(module => {
+      const { setupDirectPurchase } = module;
+      setupDirectPurchase(product._id);
+      // Navigate to checkout
+      navigate('/checkout');
+    });
   };
 
   const toggleWishlist = () => {

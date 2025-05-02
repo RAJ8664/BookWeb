@@ -58,8 +58,15 @@ const SingleBook = () => {
   };
 
   const handleBuyNow = () => {
+    // First add to cart if needed
     dispatch(addToCart({ ...book, quantity }));
-    navigate("/checkout");
+    
+    // Set up direct purchase mode
+    import('../../utils/directPurchase').then(module => {
+      const { setupDirectPurchase } = module;
+      setupDirectPurchase(book._id);
+      navigate("/checkout");
+    });
   };
 
   const renderRatingStars = (rating) => {

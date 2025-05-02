@@ -137,7 +137,7 @@ const WishList = () => {
         
         <div className="mt-4 sm:mt-0 flex space-x-3">
           <Link 
-            to="/userdashboard" 
+            to="/" 
             className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-700"
           >
             <FaArrowLeft className="mr-2" />

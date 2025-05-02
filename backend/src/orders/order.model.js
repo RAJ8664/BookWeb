@@ -29,6 +29,18 @@ const orderSchema = new mongoose.Schema({
             required: true,
         }
     ],
+    products: [{
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Book'
+        },
+        title: String,
+        price: Number,
+        quantity: {
+            type: Number,
+            default: 1
+        }
+    }],
     totalPrice: {
         type: Number,
         required: true,
@@ -40,8 +52,20 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['Cash on Delivery', 'Credit Card', 'Debit Card', 'PayPal'],
+        enum: ['Cash on Delivery', 'Credit Card', 'Debit Card', 'PayPal', 'eSewa'],
         default: 'Cash on Delivery'
+    },
+    paymentReference: {
+        method: String,
+        transactionId: String,
+        referenceId: String,
+        status: {
+            type: String,
+            enum: ['initiated', 'pending', 'complete', 'canceled', 'failed', 'refunded', 'completed'],
+            default: 'initiated'
+        },
+        completedAt: Date,
+        updatedAt: Date
     },
     cancelledAt: {
         type: Date,

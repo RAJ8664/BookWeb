@@ -393,22 +393,22 @@ const OrdersPage = () => {
                     Products
                   </h3>
                   <div className="space-y-3">
-                    {order.productIds && order.productIds.length > 0 ? (
-                      order.productIds.map((product, index) => (
+                    {order.products && order.products.length > 0 ? (
+                      order.products.map((product, index) => (
                         <div key={index} className="flex justify-between items-center border-b pb-3 hover:bg-gray-50 p-2 rounded-md transition-colors">
                           <div className="flex items-center gap-3">
-                            {product.image && (
+                            {product.coverImage && (
                               <img
-                                src={product.image}
+                                src={product.coverImage}
                                 alt={product.title}
                                 className="w-16 h-16 object-cover rounded-md border"
                               />
                             )}
                             <div>
-                              <p className="font-medium text-gray-800">{product.title || 'N/A'}</p>
+                              <p className="font-medium text-gray-800">{product.title}</p>
                               <div className="flex gap-4 text-sm text-gray-600 mt-1">
-                                <p>Qty: {product.quantity || 1}</p>
-                                <p>Price: Rs.{product.price?.toFixed(2) || 'N/A'}</p>
+                                <p>Quantity: {product.quantity || 1}</p>
+                                <p>Price: Rs.{product.price?.toFixed(2)}</p>
                               </div>
                             </div>
                           </div>

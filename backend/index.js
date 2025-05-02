@@ -36,7 +36,7 @@ app.use(express.json());
 const allowedOrigins = [
   'http://localhost:5173',
   'https://book-web-eight-lyart.vercel.app',
-  'https://book-web-bishal-roys-projects.vercel.app'
+  'https://vercel.com/bishal-roys-projects/book-web'
 ];
 
 // CORS pre-flight middleware
@@ -107,6 +107,7 @@ const orderRoutes = require("./src/orders/order.route")
 const userRoutes =  require("./src/users/user.route")
 const adminRoutes = require("./src/stats/admin.stats")
 const bookRequestRoutes = require('./src/routes/bookRequest.route');
+const esewaRoutes = require('./src/routes/esewa.route');
 
 // Register API routes
 app.use("/api/books", bookRoutes)
@@ -115,6 +116,7 @@ app.use("/api/orders", orderRoutes)
 app.use("/api/auth", userRoutes)
 app.use("/api/admin", adminRoutes)
 app.use('/api/book-requests', bookRequestRoutes);
+app.use('/api/payments/esewa', esewaRoutes);
 
 // This catch-all route should be registered AFTER all other routes
 app.get("/", (req, res) => {
@@ -124,7 +126,6 @@ app.get("/", (req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
-  console.error('Error stack:', err.stack);
   res.status(500).json({
     message: 'An unexpected error occurred',
     error: process.env.NODE_ENV === 'production' ? null : err.message

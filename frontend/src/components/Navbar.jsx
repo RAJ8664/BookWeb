@@ -22,6 +22,19 @@ const categories = [
   { name: "Science", href: "/categories/science" },
   { name: "History", href: "/categories/history" },
   { name: "Biographies", href: "/categories/biographies" },
+  { name: "Children", href: "/categories/children" },
+  { name: "Mystery", href: "/categories/mystery" },
+  { name: "Romance", href: "/categories/romance" },
+  { name: "Thriller", href: "/categories/thriller" },
+  { name: "Horror", href: "/categories/horror" },
+  { name: "Fantasy", href: "/categories/fantasy" },
+  { name: "Adventure", href: "/categories/adventure" },
+  { name: "Biography", href: "/categories/biography" },
+  { name: "Self-Help", href: "/categories/self-help" },
+  { name: "Cooking", href: "/categories/cooking" },
+  { name: "Art", href: "/categories/art" },
+  { name: "Travel", href: "/categories/travel" },
+  
 ];
 
 const secondaryNavigation = [
@@ -111,23 +124,23 @@ const Navbar = () => {
   }, []);
 
   return (
-    <header className="max-w-screen-2xl mx-auto px-4 py-4 bg-white shadow-lg border-b border-gray-100">
+    <header className="max-w-screen-2xl mx-auto px-2 sm:px-4 py-4 bg-white shadow-lg border-b border-gray-100">
       {/* Primary Navigation */}
-      <nav className="flex justify-between items-center">
+      <nav className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-0">
         {/* Left Section */}
-        <div className="flex items-center md:gap-16 gap-4">
-          <Link to="/" className="hover:scale-105 transition-transform duration-300">
+        <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4 md:gap-16 flex-1">
+          <Link to="/" className="hover:scale-105 transition-transform duration-300 flex-shrink-0">
             <img 
               src={logoImg} 
-              alt="Bookstore Logo" 
-              className="h-12 w-auto cursor-pointer drop-shadow-md"
+              alt="BookWeb Logo" 
+              className="h-8 md:h-12 w-auto cursor-pointer drop-shadow-md"
               width="120"
               height="48"
               loading="eager"
             />
           </Link>
 
-          <div className="relative sm:w-80 w-48 group">
+          <div className="relative w-1/2 max-w-2xl group">
             <form onSubmit={handleSearch} className="relative w-full">
               <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-600 transition-colors" />
               <input
@@ -220,7 +233,7 @@ const Navbar = () => {
         </div>
 
         {/* Right Section */}
-        <div className="relative flex items-center md:gap-4 gap-2">
+        <div className="relative flex items-center justify-end sm:justify-start gap-2 sm:gap-4 flex-shrink-0">
           <div className="relative" ref={dropdownRef}>
             {user ? (
               <>
@@ -288,10 +301,10 @@ const Navbar = () => {
 
           <Link
             to="/wishlist"
-            className="relative hidden sm:block text-gray-600 hover:text-red-500 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer" 
+            className="relative text-gray-600 hover:text-red-500 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer" 
             aria-label="Wishlist"
           >
-            <FaRegHeart className="size-6" />
+            <FaRegHeart className="size-5 sm:size-6" />
             {wishlistItems.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 rounded-full">
                 {wishlistItems.length}
@@ -302,13 +315,13 @@ const Navbar = () => {
           <Link
             to="/cart"
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 
-                      transition-all duration-300 p-2.5 sm:px-6 flex items-center gap-2 rounded-xl text-white font-semibold
-                      shadow-md hover:shadow-lg relative"
+                      transition-all duration-300 p-2 sm:p-2.5 sm:px-6 flex items-center gap-2 rounded-xl text-white font-semibold
+                      shadow-md hover:shadow-lg relative text-sm sm:text-base"
             aria-label="Cart"
           >
-            <span className="text-sm hidden sm:inline">My Cart</span>
+            <span className="hidden sm:inline">My Cart</span>
             <div className="relative">
-              <IoCart className="text-xl" />
+              <IoCart className="text-lg sm:text-xl" />
               {cartItems.length > 0 && (
                 <span className="absolute -top-2 -right-3 bg-white text-blue-700 text-xs font-bold px-1.5 rounded-full">
                   {cartItems.length}
@@ -321,12 +334,12 @@ const Navbar = () => {
 
       {/* Secondary Navigation */}
       <nav className="mt-4 pt-4 border-t border-gray-100" aria-label="Secondary navigation">
-        <div className="flex flex-wrap justify-center gap-4 md:gap-6 bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-3 rounded-xl mx-4">
+        <div className="flex flex-wrap justify-center gap-2 md:gap-6 bg-gradient-to-r from-blue-50 to-purple-50 px-2 sm:px-6 py-2 sm:py-3 rounded-xl">
           <div className="relative" ref={categoriesRef}>
             <button
               onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-              className="text-sm font-semibold text-gray-700 hover:text-blue-600 flex items-center gap-1.5
-                        px-4 py-1.5 rounded-lg bg-white border hover:border-blue-200 shadow-sm transition-colors"
+              className="text-xs sm:text-sm font-semibold text-gray-700 hover:text-blue-600 flex items-center gap-1.5
+                        px-3 sm:px-4 py-1 sm:py-1.5 rounded-lg bg-white border hover:border-blue-200 shadow-sm transition-colors"
               aria-expanded={isCategoriesOpen}
             >
               Categories <FaChevronDown className={`text-xs transition-transform duration-300 ${isCategoriesOpen ? "rotate-180" : ""}`} />
@@ -355,8 +368,8 @@ const Navbar = () => {
             <Link
               key={item.name}
               to={item.href}
-              className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors
-                        px-3 py-1.5 rounded-lg hover:bg-white hover:shadow-sm"
+              className="text-xs sm:text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors
+                        px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg hover:bg-white hover:shadow-sm"
             >
               {item.name}
             </Link>

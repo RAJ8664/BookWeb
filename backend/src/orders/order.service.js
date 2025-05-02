@@ -9,7 +9,7 @@ const Order = require("./order.model");
 const createOrder = async (orderData) => {
   try {
     // Validate the order data
-    if (!orderData.email || !orderData.products || !orderData.totalPrice) {
+    if (!orderData.email || !orderData.totalPrice) {
       throw new Error("Missing required order information");
     }
 
@@ -39,7 +39,9 @@ const getOrdersByEmail = async (email) => {
       throw new Error("Email is required");
     }
     
-    return await Order.find({ email }).sort({ createdAt: -1 });
+    return await Order.find({ email })
+      .populate('productIds', 'title price coverImage') // Keep this for backward compatibility
+      .sort({ createdAt: -1 });
   } catch (error) {
     throw error;
   }
@@ -48,7 +50,9 @@ const getOrdersByEmail = async (email) => {
 // Get all orders
 const getAllOrders = async () => {
   try {
-    return await Order.find().sort({ createdAt: -1 });
+    return await Order.find()
+      .populate('productIds', 'title price coverImage') // Keep this for backward compatibility
+      .sort({ createdAt: -1 });
   } catch (error) {
     throw error;
   }

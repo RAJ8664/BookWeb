@@ -109,6 +109,7 @@ const AllBooks = () => {
     e.preventDefault(); // Prevent navigation to book details
     e.stopPropagation(); // Stop event bubbling
     
+    // Add to cart
     dispatch(addToCart({
       _id: book._id,
       title: book.title,
@@ -118,8 +119,13 @@ const AllBooks = () => {
       quantity: 1
     }));
     
-    // Navigate to checkout
-    navigate('/checkout');
+    // Set up direct purchase mode
+    import('../../utils/directPurchase').then(module => {
+      const { setupDirectPurchase } = module;
+      setupDirectPurchase(book._id);
+      // Navigate to checkout
+      navigate('/checkout');
+    });
   };
 
   // Handle toggle wishlist
