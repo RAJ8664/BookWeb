@@ -13,4 +13,4 @@ function getImgUrl(url) {
   }
 }
 
-export { getImgUrl }
+export default getImgUrl;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useFetchBookByIdQuery } from "../../redux/features/books/booksAPI";
-import { getImgUrl } from "../../utils/getImgUrl";
+import getImgUrl from "../../utils/getImgUrl";
 import {
   FaStar,
   FaStarHalfAlt,
@@ -18,15 +18,16 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { addToCart } from "../../redux/features/cart/cartSlice";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { XCircleIcon } from "@heroicons/react/24/outline";
 import { BookOpenIcon } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../context/AuthContext";
 import Swal from "sweetalert2";
+import Modal from "../../components/common/Modal";
 
 const SingleBook = () => {
   const { id } = useParams();
@@ -178,7 +179,7 @@ const SingleBook = () => {
   
       {/* Notification with smooth animation */}
       {showAddedNotification && (
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
@@ -187,7 +188,7 @@ const SingleBook = () => {
         >
           <CheckCircleIcon className="w-5 h-5 mr-2 flex-shrink-0 text-green-500" />
           <p className="text-sm sm:text-base font-medium">Added to cart successfully!</p>
-        </motion.div>
+        </Motion.div>
       )}
   
       {/* Main content with glass morphism effect */}
@@ -195,7 +196,7 @@ const SingleBook = () => {
         <div className="flex flex-col lg:flex-row gap-8 sm:gap-12">
           {/* Image container with 3D hover effect */}
           <div className="w-full max-w-[350px] mx-auto lg:w-1/3 lg:max-w-none xl:w-1/4 relative group perspective">
-            <motion.div
+            <Motion.div
               whileHover={{ 
                 rotateY: 5, 
                 rotateX: -5,
@@ -222,7 +223,7 @@ const SingleBook = () => {
               
               {/* Out of stock overlay with animation */}
               {!book.inStock && (
-                <motion.div 
+                <Motion.div 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="absolute inset-0 bg-red-50/95 flex items-center justify-center rounded-xl backdrop-blur-sm"
@@ -230,9 +231,9 @@ const SingleBook = () => {
                   <span className="text-red-700 font-bold text-lg sm:text-xl px-4 py-2 border-2 border-red-300 rounded-lg">
                     Out of Stock
                   </span>
-                </motion.div>
+                </Motion.div>
               )}
-            </motion.div>
+            </Motion.div>
           </div>
   
           {/* Content area with elegant typography */}
@@ -294,7 +295,7 @@ const SingleBook = () => {
               <div className="flex flex-wrap items-center gap-4">
                 <span className="text-gray-700 font-medium text-sm sm:text-base">Quantity:</span>
                 <div className="flex items-center bg-gray-50 border border-gray-300 rounded-lg overflow-hidden shadow-sm">
-                  <motion.button 
+                  <Motion.button 
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
                     className="px-4 py-2.5 text-indigo-700 hover:bg-indigo-50 active:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -302,24 +303,24 @@ const SingleBook = () => {
                     aria-label="Decrease quantity"
                   >
                     <span className="text-lg font-medium">−</span>
-                  </motion.button>
+                  </Motion.button>
                   <span className="w-12 text-center px-2 py-2 text-lg font-medium bg-white">
                     {quantity}
                   </span>
-                  <motion.button 
+                  <Motion.button 
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setQuantity(prev => prev + 1)}
                     className="px-4 py-2.5 text-indigo-700 hover:bg-indigo-50 active:bg-indigo-100 transition-colors"
                     aria-label="Increase quantity"
                   >
                     <span className="text-lg font-medium">+</span>
-                  </motion.button>
+                  </Motion.button>
                 </div>
               </div>
   
               {/* Action buttons with advanced animations */}
               <div className="flex flex-wrap gap-4 pt-3">
-                <motion.button 
+                <Motion.button 
                   onClick={handleAddToCart}
                   className="w-auto bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3.5 rounded-xl font-medium shadow-md hover:shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(79, 70, 229, 0.4)" }}
@@ -328,9 +329,9 @@ const SingleBook = () => {
                 >
                   <ShoppingBagIcon className="w-5 h-5 flex-shrink-0" />
                   <span className="text-sm sm:text-base">Add to Cart</span>
-                </motion.button>
+                </Motion.button>
                 
-                <motion.button 
+                <Motion.button 
                   onClick={handleBuyNow}
                   className="w-auto bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-6 py-3.5 rounded-xl font-medium shadow-md hover:shadow-emerald-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   whileHover={{ y: -3, boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)" }}
@@ -339,7 +340,7 @@ const SingleBook = () => {
                 >
                   <CreditCardIcon className="w-5 h-5 flex-shrink-0" />
                   <span className="text-sm sm:text-base">Buy Now</span>
-                </motion.button>
+                </Motion.button>
               </div>
             </div>
           </div>
@@ -391,7 +392,7 @@ const SingleBook = () => {
               <ChatBubbleLeftEllipsisIcon className="w-6 h-6 mr-2 text-indigo-600" />
               Customer Reviews {reviews.length > 0 && `(${reviews.length})`}
             </h2>
-            <motion.button 
+            <Motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={openReviewModal}
@@ -400,7 +401,7 @@ const SingleBook = () => {
             >
               <PencilIcon className="w-4 h-4 flex-shrink-0" />
               <span>Write a Review</span>
-            </motion.button>
+            </Motion.button>
           </div>
           
           {reviews.length === 0 ? (
@@ -413,7 +414,7 @@ const SingleBook = () => {
                 <p className="text-gray-600 text-sm sm:text-base mb-5">
                   Be the first to share your thoughts about "{book.title}"!
                 </p>
-                <motion.button
+                <Motion.button
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={openReviewModal}
@@ -421,13 +422,13 @@ const SingleBook = () => {
                 >
                   <StarIcon className="w-4 h-4 mr-2" />
                   Be First to Review
-                </motion.button>
+                </Motion.button>
               </div>
             </div>
           ) : (
             <div className="space-y-6">
               {reviews.map(review => (
-                <motion.div 
+                <Motion.div 
                   key={review.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -450,7 +451,7 @@ const SingleBook = () => {
                     </div>
                   </div>
                   <p className="mt-4 text-gray-700">{review.text}</p>
-                </motion.div>
+                </Motion.div>
               ))}
             </div>
           )}
@@ -458,98 +459,85 @@ const SingleBook = () => {
       </div>
       
       {/* Review Modal */}
-      <AnimatePresence>
-        {showReviewModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 relative"
+      <Modal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        title={`Write a Review for ${book?.title}`}
+      >
+        <div className="space-y-6">
+          {/* Rating Selection */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2" id="rating-label">Your Rating</label>
+            <div className="flex gap-2" role="radiogroup" aria-labelledby="rating-label">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="text-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-1 transition-colors"
+                  aria-label={`Rate ${star} out of 5 stars`}
+                  aria-pressed={rating === star}
+                  role="radio"
+                  aria-checked={rating === star}
+                >
+                  {(hoverRating || rating) >= star ? (
+                    <FaStar className="text-yellow-400" />
+                  ) : (
+                    <FaRegStar className="text-yellow-400" />
+                  )}
+                </button>
+              ))}
+              <span className="ml-2 text-gray-500" aria-live="polite">
+                {rating > 0 ? `${rating}/5` : 'Select rating'}
+              </span>
+            </div>
+          </div>
+          
+          {/* Review Text */}
+          <div>
+            <label htmlFor="review" className="block text-gray-700 font-medium mb-2">Your Review</label>
+            <textarea
+              id="review"
+              rows={5}
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              placeholder="Tell others what you thought of this book..."
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all resize-none"
+              aria-required="true"
+              aria-describedby="review-hint"
+            />
+            <p id="review-hint" className="text-sm text-gray-500 mt-1" aria-live="polite">
+              {reviewText.length < 10 
+                ? `At least ${10 - reviewText.length} more characters required` 
+                : `${reviewText.length} characters`}
+            </p>
+          </div>
+          
+          {/* Submit Button */}
+          <div className="flex justify-end gap-3 pt-4">
+            <Motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowReviewModal(false)}
+              className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              <button 
-                onClick={() => setShowReviewModal(false)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-              >
-                <XMarkIcon className="w-6 h-6" />
-              </button>
-              
-              <h3 className="text-xl font-bold text-gray-900 mb-6 pb-2 border-b border-gray-200">
-                Write a Review for {book.title}
-              </h3>
-              
-              <div className="space-y-6">
-                {/* Rating Selection */}
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">Your Rating</label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setRating(star)}
-                        onMouseEnter={() => setHoverRating(star)}
-                        onMouseLeave={() => setHoverRating(0)}
-                        className="text-2xl focus:outline-none transition-colors"
-                      >
-                        {(hoverRating || rating) >= star ? (
-                          <FaStar className="text-yellow-400" />
-                        ) : (
-                          <FaRegStar className="text-yellow-400" />
-                        )}
-                      </button>
-                    ))}
-                    <span className="ml-2 text-gray-500">
-                      {rating > 0 ? `${rating}/5` : 'Select rating'}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Review Text */}
-                <div>
-                  <label htmlFor="review" className="block text-gray-700 font-medium mb-2">Your Review</label>
-                  <textarea
-                    id="review"
-                    rows={5}
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                    placeholder="Tell others what you thought of this book..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all resize-none"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    {reviewText.length < 10 ? `At least ${10 - reviewText.length} more characters required` : `${reviewText.length} characters`}
-                  </p>
-                </div>
-                
-                {/* Submit Button */}
-                <div className="flex justify-end gap-3 pt-4">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowReviewModal(false)}
-                    className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={submitReview}
-                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
-                  >
-                    Submit Review
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              Cancel
+            </Motion.button>
+            <Motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={submitReview}
+              className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
+              disabled={rating === 0 || reviewText.trim().length < 10}
+              aria-disabled={rating === 0 || reviewText.trim().length < 10}
+            >
+              Submit Review
+            </Motion.button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
