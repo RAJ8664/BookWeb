@@ -99,7 +99,7 @@ const Navbar = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      navigate(`/search/${encodeURIComponent(searchQuery)}`);
       setShowSearchResults(false);
     }
   };

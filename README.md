@@ -8,19 +8,18 @@
 
 <div align="center">
   
-  ![React](https://img.shields.io/badge/React-18.2.0-61DAFB?style=for-the-badge&logo=react)
-  ![Node.js](https://img.shields.io/badge/Node.js-Express_5.x-339933?style=for-the-badge&logo=node.js)
-  ![MongoDB](https://img.shields.io/badge/MongoDB-8.x-4EA94B?style=for-the-badge&logo=mongodb)
-  ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=for-the-badge&logo=tailwind-css)
-  ![Redux](https://img.shields.io/badge/Redux_Toolkit-1.9.x-764ABC?style=for-the-badge&logo=redux)
-  ![Vite](https://img.shields.io/badge/Vite-4.x-646CFF?style=for-the-badge&logo=vite)
+  ![React](https://img.shields.io/badge/React-19.0.0-61DAFB?style=for-the-badge&logo=react)
+  ![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=for-the-badge&logo=node.js)
+  ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb)
+  ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css)
+  ![Redux](https://img.shields.io/badge/Redux-764ABC?style=for-the-badge&logo=redux)
   
 </div>
 
 BookWeb is a full-stack online bookstore application built with React and Node.js, allowing users to browse, purchase, and manage books. The application features user authentication, book management, shopping cart functionality, and an admin dashboard for store management.
 
 
-🎬 **Live Demo:**
+🎬 Live Demo:
 https://book-web-eight-lyart.vercel.app
 
 ## 📑 Table of Contents
@@ -36,9 +35,8 @@ https://book-web-eight-lyart.vercel.app
   - [Installation](#-installation)
   - [Running the Application](#️-running-the-application)
 - [Development Environment](#-development-environment)
-- [🔐 Admin Access & MongoDB Setup](#-admin-access--mongodb-setup)
-- [eSewa Payment Integration](#-esewa-payment-integration)
-- [Deployment Options](#-deployment-options)
+- [🔐 Admin Access & MongoDB Setup](#-admin-access-&-mongodb-setup)
+- [eSewa Payment Integration](#-eSewa-payment-integration)
 - [What I Learned](#-what-i-learned)
 - [Contributing](#-contributing)
 - [Author](#-author)
@@ -87,14 +85,13 @@ https://book-web-eight-lyart.vercel.app
 - Wishlist & cart functionality
 - Checkout with multiple payment methods (eSewa, Cash on Delivery)
 - Book request system for unavailable titles
-- Tailwind CSS for responsive UI (mobile-first design)
 
 ### ⚙️ Backend
 - RESTful API with Express.js
 - MongoDB with Mongoose
 - JWT authentication + role-based access
 - Book CRUD operations with image upload to Cloudinary
-- CSV import/export for bulk book data
+- CSV import/export for book data
 - Optimized MongoDB queries with indexing
 - Email notifications (via EmailJS)
 
@@ -106,9 +103,6 @@ The application is built with a modern architecture:
 - **Backend**: Express API server with MongoDB integration
 - **Database**: MongoDB for data persistence
 - **File Storage**: Cloudinary for image and document storage
-- **State Management**: Redux Toolkit + Context API
-- **API Communication**: RTK Query with optimistic updates
-- **Authentication**: JWT with refresh tokens for secure sessions
 
 ## 🚦 Getting Started
 
@@ -264,7 +258,7 @@ const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
    db.books.createIndex({ category: 1, trending: 1, bestSeller: 1, newArrival: 1 })
    ```
 
-## 💳 eSewa Payment Integration
+## eSewa Payment Integration
 
 <div align="center">
   <img src="https://esewa.com.np/common/images/esewa_logo.png" alt="eSewa Logo" width="200px" />
@@ -311,14 +305,8 @@ Note: eSewa integration uses HMAC-SHA256 for secure transaction verification.
 - Managing authentication state across payment redirects
 
 ### 🙌 Contributing
-
-Contributions are welcome! Here's how you can contribute:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add some amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+Contributions are welcome!
+Please open an issue or submit a pull request 🙏
 
 
 ### 👨‍💻 Author
