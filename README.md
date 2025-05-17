@@ -19,14 +19,6 @@
 
 BookWeb is a full-stack online bookstore application built with React and Node.js, allowing users to browse, purchase, and manage books. The application features user authentication, book management, shopping cart functionality, and an admin dashboard for store management.
 
-## 🌐 Project Repositories
-
-This project is organized across multiple repositories:
-
-- **[BookWeb](https://github.com/arthurr455565/BookWeb)** - Integrated local development setup (this repo)
-- **[BookWeb-Frontend](https://github.com/arthurr455565/BookWeb-frontend)** - Production frontend deployment
-- **[BookWeb-Backend](https://github.com/arthurr455565/BookWeb-Backend)** - Production backend deployment
-- **[BookWeb-Main](https://github.com/arthurr455565/BookWeb-Main)** - Vercel integration configuration
 
 🎬 **Live Demo:**
 https://book-web-eight-lyart.vercel.app
