@@ -1,0 +1,7 @@
+{
+  "banners": [
+    { "image": "/banner2/banner2.png", "link": "/books" },
+    { "image": "/banner2/banner3.png", "link": "/books" }
+
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "trending_books": [
+    {
+      "id": 1,
+      "title": "Fourth Wing",
+      "author": "Rebecca Yarros",
+      "categories": "Fiction, Romance, Fantasy",
+      "trending": true,
+      "coverImage": "fourthwing.png",
+      "price": 550.00
+    },
+    {
+      "id": 2,
+      "title": "The Wedding People",
+      "author": "Alison Espach",
+      "categories": "Fiction, Romance, Humor, Dark comedy",
+      "coverImage": "theweddingpeople.png",
+      "price": 2613.00
+    },
+    {
+      "id": 3,
+      "title": "I See You've Called in Dead",
+      "author": "John Kenney",
+      "categories": "Dark comedy, Fiction",
+      "coverImage": "iseeyouve.jpg",
+      "price": 3628.00
+    },
+    {
+      "id": 4,
+      "title": "Great Big Beautiful Life",
+      "author": "Emily Henry",
+      "categories": "Fiction, Romance",
+      "coverImage": "greatbigbeautifullife.jpg",
+      "price": 2663.00
+    },
+    {
+      "id": 5,
+      "title": "The Buffalo Hunter Hunter",
+      "author": "Stephen Graham Jones",
+      "categories": "Horror, Thriller, Fantasy",
+      "coverImage": "thebuffalohunterhunter.jpg",
+      "price": 3127.00
+    }
+  ]
+}
