@@ -1,15 +1,15 @@
 const esewaService = require('../utils/esewa.service');
 const Order = require('../orders/order.model');
 
-/**
- * Controller for eSewa payment gateway integration
- */
+/* Controller for eSewa payment gateway integration */
 
-/**
+/** 
+
  * Initializes an eSewa payment for a given order
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
- */
+ 
+**/
 const initiateEsewaPayment = async (req, res) => {
   try {
     const { orderId } = req.params;

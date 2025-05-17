@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useLocation } from "react-router-dom";
 
@@ -6,7 +6,7 @@ import { FiTrash2 } from "react-icons/fi";
 import Swal from "sweetalert2";
 
 import { useAuth } from "../../context/AuthContext";
-import getImgUrl from "../../utils/getImgUrl";
+import { getImgUrl } from "../../utils/getImgUrl";
 
 import { Link } from "react-router-dom";
 import {

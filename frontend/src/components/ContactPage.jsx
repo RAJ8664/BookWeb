@@ -1,11 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPaperPlane, FaCheck } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import emailjs from 'emailjs-com';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { contactSchema } from '../utils/validationSchemas';
 
 // Use environment variables instead of hardcoded values
 const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
@@ -14,27 +11,19 @@ const USER_ID = import.meta.env.VITE_EMAILJS_USER_ID;
 
 const ContactPage = () => {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [messageSuccess, setMessageSuccess] = useState(false);
-
-  const { 
-    register, 
-    handleSubmit, 
-    reset,
-    formState: { errors } 
-  } = useForm({
-    resolver: zodResolver(contactSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      confirmEmail: '',
-      address: '',
-      phone: '',
-      subject: '',
-      issueType: 'general',
-      message: ''
-    }
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    confirmEmail: '',
+    address: '',
+    phone: '',
+    subject: '',
+    issueType: 'general',
+    message: ''
   });
+  
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const issueOptions = [
     { value: 'general', label: 'General Inquiry' },
@@ -45,47 +34,115 @@ const ContactPage = () => {
     { value: 'other', label: 'Other' }
   ];
 
-  const onSubmit = async (data) => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when field is modified
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+    
+    // Confirm email validation
+    if (formData.email !== formData.confirmEmail) {
+      newErrors.confirmEmail = 'Emails do not match';
+    }
+    
+    // Phone validation - removed
+    
+    // Subject validation
+    if (!formData.subject.trim()) {
+      newErrors.subject = 'Subject is required';
+    }
+    
+    // Message validation
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required';
+    } else if (formData.message.length < 20) {
+      newErrors.message = 'Message should be at least 20 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
-      setIsSubmitting(true);
-      
-      // Prepare template parameters for EmailJS
+      // Send email using EmailJS
       const templateParams = {
-        from_name: data.name,
-        reply_to: data.email,
-        subject: data.subject,
-        message: data.message,
-        issue_type: data.issueType,
-        phone: data.phone || 'Not provided',
-        address: data.address || 'Not provided'
+        to_email: 'bishalroy909@gmail.com',
+        from_name: formData.name,
+        from_email: formData.email,
+        phone: formData.phone || 'Not provided',
+        address: formData.address || 'Not provided',
+        subject: formData.subject,
+        issue_type: formData.issueType,
+        message: formData.message
       };
       
-      // Send email using EmailJS
-      await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        templateParams,
+      // Using EmailJS v3 send method with the full set of parameters
+      const response = await emailjs.send(
+        SERVICE_ID, 
+        TEMPLATE_ID, 
+        templateParams, 
         USER_ID
       );
+      console.log('Email successfully sent!', response);
       
       // Show success message
-      setMessageSuccess(true);
-      
-      // Reset form after successful submission
-      reset();
-      
-      // Show success alert
       Swal.fire({
         title: 'Message Sent!',
-        text: 'We have received your message and will get back to you soon.',
+        text: 'We have received your message and will contact you soon.',
         icon: 'success',
         confirmButtonColor: '#3085d6'
       });
       
-      // Navigate back to home page after successful submission
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        confirmEmail: '',
+        address: '',
+        phone: '',
+        subject: '',
+        issueType: 'general',
+        message: ''
+      });
+      
+      // Redirect to home page after a delay
       setTimeout(() => {
         navigate('/');
-      }, 3000);
+      }, 2000);
       
     } catch (error) {
       console.error('Error sending message:', error);
@@ -125,7 +182,7 @@ const ContactPage = () => {
           </p>
         </div>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Name Field */}
             <div>
@@ -134,16 +191,16 @@ const ContactPage = () => {
               </label>
               <input
                 id="name"
-                {...register("name")}
+                name="name"
                 type="text"
+                value={formData.name}
+                onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Your name"
-                aria-invalid={errors.name ? "true" : "false"}
-                aria-describedby={errors.name ? "name-error" : ""}
               />
-              {errors.name && <p id="name-error" className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
+              {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
             </div>
             
             {/* Phone Field */}
@@ -153,8 +210,10 @@ const ContactPage = () => {
               </label>
               <input
                 id="phone"
-                {...register("phone")}
+                name="phone"
                 type="tel"
+                value={formData.phone}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors"
                 placeholder="Your phone number (optional)"
               />
@@ -167,16 +226,16 @@ const ContactPage = () => {
               </label>
               <input
                 id="email"
-                {...register("email")}
+                name="email"
                 type="email"
+                value={formData.email}
+                onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors ${
                   errors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Your email address"
-                aria-invalid={errors.email ? "true" : "false"}
-                aria-describedby={errors.email ? "email-error" : ""}
               />
-              {errors.email && <p id="email-error" className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
             </div>
             
             {/* Confirm Email Field */}
@@ -186,16 +245,16 @@ const ContactPage = () => {
               </label>
               <input
                 id="confirmEmail"
-                {...register("confirmEmail")}
+                name="confirmEmail"
                 type="email"
+                value={formData.confirmEmail}
+                onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors ${
                   errors.confirmEmail ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Confirm your email"
-                aria-invalid={errors.confirmEmail ? "true" : "false"}
-                aria-describedby={errors.confirmEmail ? "confirm-email-error" : ""}
               />
-              {errors.confirmEmail && <p id="confirm-email-error" className="mt-1 text-sm text-red-500">{errors.confirmEmail.message}</p>}
+              {errors.confirmEmail && <p className="mt-1 text-sm text-red-500">{errors.confirmEmail}</p>}
             </div>
           </div>
           
@@ -206,8 +265,10 @@ const ContactPage = () => {
             </label>
             <input
               id="address"
-              {...register("address")}
+              name="address"
               type="text"
+              value={formData.address}
+              onChange={handleChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors"
               placeholder="Your address (optional)"
             />
@@ -221,26 +282,28 @@ const ContactPage = () => {
               </label>
               <input
                 id="subject"
-                {...register("subject")}
+                name="subject"
                 type="text"
+                value={formData.subject}
+                onChange={handleChange}
                 className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors ${
                   errors.subject ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Message subject"
-                aria-invalid={errors.subject ? "true" : "false"}
-                aria-describedby={errors.subject ? "subject-error" : ""}
               />
-              {errors.subject && <p id="subject-error" className="mt-1 text-sm text-red-500">{errors.subject.message}</p>}
+              {errors.subject && <p className="mt-1 text-sm text-red-500">{errors.subject}</p>}
             </div>
             
             {/* Issue Type Field */}
             <div>
               <label htmlFor="issueType" className="block text-sm font-medium text-gray-700 mb-1">
-                Issue Type
+                Related To <span className="text-red-500">*</span>
               </label>
               <select
                 id="issueType"
-                {...register("issueType")}
+                name="issueType"
+                value={formData.issueType}
+                onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors"
               >
                 {issueOptions.map(option => (
@@ -257,48 +320,56 @@ const ContactPage = () => {
             </label>
             <textarea
               id="message"
-              {...register("message")}
+              name="message"
               rows="5"
+              value={formData.message}
+              onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition-colors ${
                 errors.message ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Your message..."
-              aria-invalid={errors.message ? "true" : "false"}
-              aria-describedby={errors.message ? "message-error" : ""}
+              placeholder="Please describe your inquiry in detail..."
             ></textarea>
-            {errors.message && <p id="message-error" className="mt-1 text-sm text-red-500">{errors.message.message}</p>}
+            {errors.message && <p className="mt-1 text-sm text-red-500">{errors.message}</p>}
           </div>
           
+          {/* Submit Button */}
           <div className="flex justify-end">
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`px-6 py-3 rounded-lg text-white font-medium flex items-center transition-all ${
-                isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              className={`px-6 py-3 rounded-lg text-white font-medium flex items-center space-x-2 ${
+                isSubmitting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200'
               }`}
             >
               {isSubmitting ? (
                 <>
-                  <span className="mr-2">Sending...</span>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </>
-              ) : messageSuccess ? (
-                <>
-                  <span className="mr-2">Sent Successfully</span>
-                  <FaCheck />
+                  <span className="animate-spin h-5 w-5 mr-2 border-t-2 border-b-2 border-white rounded-full"></span>
+                  <span>Sending...</span>
                 </>
               ) : (
                 <>
-                  <span className="mr-2">Send Message</span>
                   <FaPaperPlane />
+                  <span>Send Message</span>
                 </>
               )}
             </button>
           </div>
         </form>
+        
+        <div className="bg-gray-50 p-6 border-t">
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <FaCheck className="text-green-500" />
+            <span>Your information is secure and will only be used to contact you about your inquiry.</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-12 text-center">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Contact Information</h2>
+        <p className="text-gray-600 mb-2">Email: bishalroy909@gmail.com</p>
+        <p className="text-gray-600 mb-2">Phone: +977-9807704850</p>
       </div>
     </div>
   );

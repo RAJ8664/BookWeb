@@ -1,111 +1,107 @@
-import React, { lazy, Suspense } from "react";
+import React from "react";
 import { createBrowserRouter } from "react-router-dom";
 
 import ProtectedRoute from "../routers/ProtectedRoute";
-import AdminRoute from "../routers/AdminRoute";
 import { Navigate } from "react-router-dom"; // Also make sure Navigate is imported
-import ErrorBoundary from "../components/ErrorBoundary";
+
 
 import App from "../app";
+import Home from "../pages/home/Home";
+import Login from "../components/Login";
+import Register from "../components/Register";
+import CartPage from "../pages/books/CartPage";
+import CheckoutPage from "../pages/books/CheckoutPage"
+import UserDashboard from "../components/User-Dashboard";
+import UpdateProfile from "../components/UpdateProfile";
+import UserSettings from "../components/UserSettings";
+import WishList from "../components/WishList";
+import SingleBook from "../pages/books/singleBook";
+import OrdersPage from "../pages/books/orderPage";
+import AboutPage from "../components/AboutPage";
+import ContactPage from "../components/ContactPage";
+import SearchPrefix from "../pages/books/SearchPrefix";
+import AllBooks from "../pages/books/AllBooks";
+import CategoryBooks from "../pages/categories/CategoryBooks";
 
-// Implement Suspense fallback component
-const LoadingFallback = () => (
-  <div className="flex flex-col items-center justify-center min-h-screen">
-    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    <p className="mt-4 text-lg text-gray-600">Loading content...</p>
-  </div>
-);
+import NewArrival from "../pages/SecondaryNavigationPage/NewArrival";
+import BestSellers from "../pages/SecondaryNavigationPage/BestSellers";
+import AwardWinners from "../pages/SecondaryNavigationPage/AwardWinners";
+import RequestBook from "../pages/SecondaryNavigationPage/RequestBook";
 
-// Lazy loaded components - Main navigation
-const Home = lazy(() => import("../pages/home/Home"));
-const Login = lazy(() => import("../components/Login"));
-const Register = lazy(() => import("../components/Register"));
-const CartPage = lazy(() => import("../pages/books/CartPage"));
-const CheckoutPage = lazy(() => import("../pages/books/CheckoutPage"));
-const UserDashboard = lazy(() => import("../components/User-Dashboard"));
-const UpdateProfile = lazy(() => import("../components/UpdateProfile"));
-const UserSettings = lazy(() => import("../components/UserSettings"));
-const WishList = lazy(() => import("../components/WishList"));
-const SingleBook = lazy(() => import("../pages/books/singleBook"));
-const OrdersPage = lazy(() => import("../pages/books/orderPage"));
-const AboutPage = lazy(() => import("../components/AboutPage"));
-const ContactPage = lazy(() => import("../components/ContactPage"));
-const AllBooks = lazy(() => import("../pages/books/AllBooks"));
-const CategoryBooks = lazy(() => import("../pages/categories/CategoryBooks"));
+// Payment Pages
+import EsewaSuccess from "../pages/payment/EsewaSuccess";
+import EsewaFailure from "../pages/payment/EsewaFailure";
 
-// Lazy loaded components - Secondary navigation
-const NewArrival = lazy(() => import("../pages/SecondaryNavigationPage/NewArrival"));
-const BestSellers = lazy(() => import("../pages/SecondaryNavigationPage/BestSellers"));
-const AwardWinners = lazy(() => import("../pages/SecondaryNavigationPage/AwardWinners"));
-const RequestBook = lazy(() => import("../pages/SecondaryNavigationPage/RequestBook"));
+import AdminRoute from "./AdminRoute";
+import AdminLogin from "../components/AdminLogin"
+import DashboardLayout from "../pages/dashboard/DashboardLayout";
+import Dashboard from "../pages/dashboard/Dashboard";
+import ManageBooks from "../pages/dashboard/manageBooks/ManageBooks";
+import AddBook from "../pages/dashboard/addBook/AddBook";
+import UpdateBook from "../pages/dashboard/EditBook/UpdateBook";
+import ManageOrders from "../pages/dashboard/manageOrders/ManageOrders";
+import ManageBookRequests from "../pages/dashboard/manageBooks/ManageBookRequests";
+import BulkBookUpload from "../pages/dashboard/bulkUpload/BulkBookUpload";  
 
-// Lazy loaded components - Payment pages
-const EsewaSuccess = lazy(() => import("../pages/payment/EsewaSuccess"));
-const EsewaFailure = lazy(() => import("../pages/payment/EsewaFailure"));
-
-// Lazy loaded components - Admin pages
-const AdminLogin = lazy(() => import("../components/AdminLogin"));
-const DashboardLayout = lazy(() => import("../pages/dashboard/DashboardLayout"));
-const Dashboard = lazy(() => import("../pages/dashboard/Dashboard"));
-const ManageBooks = lazy(() => import("../pages/dashboard/manageBooks/ManageBooks"));
-const AddBook = lazy(() => import("../pages/dashboard/addBook/AddBook"));
-const UpdateBook = lazy(() => import("../pages/dashboard/EditBook/UpdateBook"));
-const ManageOrders = lazy(() => import("../pages/dashboard/manageOrders/ManageOrders"));
-const ManageBookRequests = lazy(() => import("../pages/dashboard/manageBooks/ManageBookRequests"));
-const BulkBookUpload = lazy(() => import("../pages/dashboard/bulkUpload/BulkBookUpload"));
-
-// Helper function to wrap routes with Suspense and ErrorBoundary
-const withSuspense = (Element) => (
-  <ErrorBoundary>
-    <Suspense fallback={<LoadingFallback />}>
-      {Element}
-    </Suspense>
-  </ErrorBoundary>
-);
+// Error boundary component
+const ErrorBoundary = () => {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <h1 className="text-3xl font-bold text-red-600 mb-4">Oops! Something went wrong</h1>
+      <p className="text-gray-600 mb-6">We're sorry, but there was an error loading this page.</p>
+      <button 
+        onClick={() => window.location.href = '/'}
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+      >
+        Return to Home
+      </button>
+    </div>
+  );
+};
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
-    errorElement: <ErrorBoundary><div className="min-h-screen flex items-center justify-center">Route not found or error occurred</div></ErrorBoundary>,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         path: "/",
-        element: withSuspense(<Home />)
+        element: <Home />
       },
       {
         path: "/orders",
-        element: <ProtectedRoute>{withSuspense(<OrdersPage />)}</ProtectedRoute>
+        element: <ProtectedRoute><OrdersPage /></ProtectedRoute>
       },
       {
         path: "/about",
-        element: withSuspense(<AboutPage />)
+        element: <AboutPage />
       },
       {
         path: "/contact",
-        element: withSuspense(<ContactPage />)
+        element: <ContactPage />
       },
       {
         path: "/books",
-        element: withSuspense(<AllBooks />)
+        element: <AllBooks />
       },
       {
         path: "/login",
-        element: withSuspense(<Login />)
+        element: <Login />
       },
       {
         path: "/register",
-        element: withSuspense(<Register />)
+        element: <Register />
       },
       {
         path: "/cart",
-        element: withSuspense(<CartPage />)
+        element: <CartPage />
       },
       {
         path: "/checkout",
         element: (
         <ProtectedRoute>
-          {withSuspense(<CheckoutPage />)}
+        <CheckoutPage />
         </ProtectedRoute>
       )
       },
@@ -113,7 +109,7 @@ const router = createBrowserRouter([
         path: "/userdashboard",
         element: (
           <ProtectedRoute>
-            {withSuspense(<UserDashboard />)}
+            <UserDashboard />
           </ProtectedRoute>
         )
       },
@@ -121,88 +117,93 @@ const router = createBrowserRouter([
         path: "/settings",
         element: (
           <ProtectedRoute>
-            {withSuspense(<UserSettings />)}
+            <UserSettings />
           </ProtectedRoute>
         )
       },
       {
         path: "/wishlist",
-        element: withSuspense(<WishList />)
+        element: <WishList />
       },
       {
         path: "/update-profile",
-        element: withSuspense(<UpdateProfile />)
+        element: <UpdateProfile />
       },
       {
         path: "/books/:id",
-        element: withSuspense(<SingleBook />)
+        element: <SingleBook />
       },
       {
         path: "/new-arrivals",
-        element: withSuspense(<NewArrival />)
+        element: <NewArrival />
       },
       {
         path: "/best-sellers",
-        element: withSuspense(<BestSellers />)
+        element: <BestSellers />
       },
       {
         path: "/award-winners",
-        element: withSuspense(<AwardWinners />)
+        element: <AwardWinners />
       },
       {
         path: "/request-book",
-        element: withSuspense(<RequestBook />)
+        element: <RequestBook />
       },
       {
         path: "/categories/:category",
-        element: withSuspense(<CategoryBooks />)
+        element: <CategoryBooks />
       },
       // eSewa payment routes
       {
         path: "/payment/esewa/success",
-        element: withSuspense(<EsewaSuccess />)
+        element: <EsewaSuccess />
       },
       {
         path: "/payment/esewa/failure",
-        element: withSuspense(<EsewaFailure />)
-      }
+        element: <EsewaFailure />
+      },
+      {
+        path : "/search/:query",
+        element : <SearchPrefix />
+      },
     ]
   },
-  {
+  { 
     path: "/admin",
-    element: withSuspense(<AdminLogin />) 
+    element: <AdminLogin /> 
+
   },
   {
     path: "/dashboard",
-    element: <AdminRoute>{withSuspense(<DashboardLayout />)}</AdminRoute>,
+    element: <AdminRoute><DashboardLayout /></AdminRoute>,
     children: [
       {
         path: "",
-        element: <AdminRoute>{withSuspense(<Dashboard />)}</AdminRoute>
+        element: <AdminRoute><Dashboard /></AdminRoute>
       },
       {
         path: "add-new-book",
-        element: <AdminRoute>{withSuspense(<AddBook />)}</AdminRoute>
+        element: <AdminRoute><AddBook /></AdminRoute>
       },
       {
         path: "bulk-upload",
-        element: <AdminRoute>{withSuspense(<BulkBookUpload />)}</AdminRoute>
+        element: <AdminRoute><BulkBookUpload /></AdminRoute>
       },
       {
         path: "edit-book/:id",
-        element: <AdminRoute>{withSuspense(<UpdateBook />)}</AdminRoute>
+        element: <AdminRoute><UpdateBook /></AdminRoute>
       },
       {
         path: "manage-books",
-        element: <AdminRoute>{withSuspense(<ManageBooks />)}</AdminRoute>
+        element: <AdminRoute><ManageBooks /></AdminRoute  >
       },
       {
         path: "manage-orders",
-        element: <AdminRoute>{withSuspense(<ManageOrders />)}</AdminRoute>
+        element: <AdminRoute><ManageOrders /></AdminRoute>
       },
       {
         path: "manage-book-requests",
-        element: <AdminRoute>{withSuspense(<ManageBookRequests />)}</AdminRoute>
+        element: <AdminRoute><ManageBookRequests /></AdminRoute>
       }
     ]
   }
