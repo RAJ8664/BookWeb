@@ -2,15 +2,23 @@ import React from 'react';
 import { FaBook, FaCheckCircle, FaShippingFast, FaHeadset, FaSmile } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import profile from '../assets/Profile2.jpg';
+import Bishal from '../assets/Profile2.jpg';
+import Raj from '../assets/Profile3.jpg'
+
 
 const AboutPage = () => {
   const teamMembers = [
     {
       name: 'Bishal Roy',
       role: 'Creator of BookWeb',
-      image: profile,
+      image: Bishal,
       bio: 'Passionate about books and technology, Bishal founded BookWeb to share his love for reading with the world.',
+    },
+    {
+      name : 'Raj Roy',
+      role : 'Bug Finder and Tester',
+      image : Raj,
+      bio : 'No Bio',
     }
   ];
 
