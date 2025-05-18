@@ -605,28 +605,40 @@ const CheckoutPage = () => {
     
                       {/* Country */}
                       <div className="md:col-span-2">
-                        <InputField
-                          label="Country"
-                          id="country"
-                          register={register}
-                          required="Country is required"
-                          error={errors.country}
-                          placeholder="Country"
-                          icon={FaGlobe}
-                        />
+                        <label className="block font-medium text-gray-700 mb-1 flex items-center">
+                          <FaGlobe className="mr-2 text-blue-500" />
+                          Country
+                        </label>
+                        <select
+                          {...register("country", { required: true })}
+                          className="h-10 w-full pl-3 bg-gray-100 rounded border border-gray-200 text-gray-500"
+                        >
+                          <option value="">Select a country</option>
+                          <option value="Nepal">Nepal</option>
+                        </select>
+                        {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message || "Country is required"}</p>}
                       </div>
     
                       {/* State */}
                       <div className="md:col-span-2">
-                        <InputField
-                          label="Province"
-                          id="state"
-                          register={register}
-                          required="State is required"
-                          error={errors.state}
-                          placeholder="State"
-                          icon={FaMapPin}
-                        />
+                        <label className="block font-medium text-gray-700 mb-1 flex items-center">
+                          <FaMapPin className="mr-2 text-blue-500" />
+                          Province
+                        </label>
+                        <select
+                          {...register("state", { required: true })}
+                          className="h-10 w-full pl-3 bg-gray-100 rounded border border-gray-200 text-gray-500"
+                        >
+                          <option value="">Select a province</option>
+                          <option value="Koshi Province"> Koshi Province </option>
+                          <option value="Madhesh Province">Madhesh Province</option>
+                          <option value="Bagmati Province">Bagmati Province</option>
+                          <option value="Gandaki Province">Gandaki Province</option>
+                          <option value="Lumbini Province">Lumbini Province</option>
+                          <option value="Karnali Province">Karnali Province</option>
+                          <option value="Sudurpashchim Province">Sudurpashchim Province</option>
+                        </select>
+                        {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message || "Province is required"}</p>}
                       </div>
     
                       {/* Zipcode */}
